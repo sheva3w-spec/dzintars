@@ -150,6 +150,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
     <button class="big b-dark" id="blitzBtn" type="button">⚡ Блиц 60 сек</button>
     <button class="big b-dark" id="fixBtn" type="button">🩹 Ошибки (<span id="errN">0</span>)</button>
   </div>
+  <button class="big b-amber" id="sayBtn" type="button">🎤 Проверка произношения</button>
 
   <div class="map" id="map"></div>
 
@@ -363,7 +364,7 @@ function startBlitz(){
 function renderQ(){
   const q=G.qs[G.k],box=$("qbox");box.textContent="";G.sel=null;G.checked=false;
   $("prog").style.width=(G.mode==="blitz"?Math.min(100,G.right*5):G.k/G.qs.length*100)+"%";
-  if(G.mode!=="blitz")$("hearts").textContent=G.mode==="fix"?"🩹":"❤️ "+G.hearts;
+  if(G.mode!=="blitz")$("hearts").textContent=G.mode==="fix"?"🩹":G.mode==="say"?"🎤":"❤️ "+G.hearts;
   $("combo").textContent=G.combo>=3?"🔥 Серия "+G.combo+" · ×"+mult():"";
   $("fb").hidden=true;$("sheet").className="sheet";
   const go=$("go");go.textContent="Проверить";go.disabled=false;go.style.opacity="";
@@ -372,7 +373,8 @@ function renderQ(){
   const sub=document.createElement("div");sub.className="sub";
   box.append(kind,pr,sub);
   const addSay=t=>{if(!lvVoice)return;const b=document.createElement("button");b.type="button";b.className="say";b.textContent="🔊 Послушать";b.onclick=()=>speak(t);box.appendChild(b)};
-  if(q.type==="learn"){
+  if(q.type==="say"){renderSay(q,box,kind,pr,sub)}
+  else if(q.type==="learn"){
     const nLearn=G.qs.filter(x=>x.type==="learn").length;
     kind.textContent="Новое слово "+(G.k+1)+" из "+nLearn;pr.textContent=q.w[0];sub.textContent="Читается: ["+q.w[1]+"]";
     const ru=document.createElement("div");ru.className="prompt";ru.style.color="var(--amber)";ru.style.fontSize="1.6rem";ru.textContent="= "+q.w[2];
@@ -424,8 +426,75 @@ function options(list,right){
 }
 const mult=()=>G.combo>=10?3:G.combo>=5?2:1;
 
+/* ============ ПРОИЗНОШЕНИЕ ============
+   Телефон превращает речь в текст; если записалось то же слово — сказано понятно.
+   1) микрофон браузера (lv-LV), если он работает здесь;
+   2) иначе микрофон клавиатуры: человек диктует в поле, мы сравниваем. */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let srBroken=false;
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+function sayScore(heard,want){const a=norm(heard),b=norm(want);if(!a)return 0;return Math.max(0,Math.round((1-lev(a,b)/Math.max(a.length,b.length))*100))}
+const SOUND_TIPS={"ā":"ā — длинное «аа», тяните вдвое дольше","ē":"ē — длинное «ээ»","ī":"ī — длинное «ии»","ū":"ū — длинное «уу»",
+  "ķ":"ķ — мягкое «кь», почти «ть»","ģ":"ģ — мягкое «гь», почти «дь»","ļ":"ļ — мягкое «ль»","ņ":"ņ — мягкое «нь», как в «няня»",
+  "š":"š — «ш»","ž":"ž — «ж»","č":"č — «ч»","o":"o — часто звучит как «уо»","r":"r — короткое раскатистое «р»"};
+function sayTips(heard,want){
+  const h=norm(heard),w=norm(want),tips=[];
+  [...new Set([...w])].forEach(c=>{if(SOUND_TIPS[c]&&!h.includes(c))tips.push(SOUND_TIPS[c])});
+  if(!tips.length&&strip(h)!==strip(w))tips.push("Ударение — на первый слог, говорите медленнее и чётче");
+  return tips.slice(0,3);
+}
+function startSay(){
+  let pool=learnedWords();if(pool.length<4)pool=LEVELS[0].w.slice(0,6);
+  G={mode:"say",qs:pick(pool,6).map(w=>({type:"say",w,tries:0})),k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0};
+  show("lesson");renderQ();
+}
+function renderSay(q,box,kind,pr,sub){
+  kind.textContent="Скажите вслух";pr.textContent=q.w[0];sub.textContent="["+q.w[1]+"] — "+q.w[2];
+  if(SR&&!srBroken){
+    const mic=document.createElement("button");mic.type="button";mic.className="big b-dark";mic.textContent="🎤 Нажмите и скажите";
+    mic.onclick=()=>{
+      if(G.checked)return;
+      let r;try{r=new SR()}catch(e){srBroken=true;renderQ();return}
+      r.lang="lv-LV";r.interimResults=false;r.maxAlternatives=5;
+      mic.textContent="👂 Слушаю… говорите";mic.disabled=true;
+      r.onresult=e=>{const alts=[...e.results[0]].map(x=>x.transcript);
+        const best=alts.sort((a,b)=>sayScore(b,q.w[0])-sayScore(a,q.w[0]))[0]||"";
+        $("ans").value=best;check()};
+      r.onerror=e=>{mic.disabled=false;mic.textContent="🎤 Нажмите и скажите";
+        if(e.error==="no-speech"){toast("Ничего не слышно — попробуйте ещё раз");return}
+        srBroken=true;toast("Микрофон здесь не работает — используйте микрофон клавиатуры");renderQ()};
+      r.onend=()=>{mic.disabled=false;if(!G.checked)mic.textContent="🎤 Нажмите и скажите"};
+      try{r.start()}catch(e){srBroken=true;renderQ()}
+    };
+    box.appendChild(mic);
+  }
+  const inp=document.createElement("input");inp.className="inp";inp.id="ans";inp.autocomplete="off";inp.autocapitalize="off";inp.spellcheck=false;
+  inp.placeholder="Или: 🎙 на клавиатуре → скажите слово";inp.onkeydown=e=>{if(e.key==="Enter")$("go").click()};
+  box.appendChild(inp);
+  const help=document.createElement("div");help.className="small";
+  help.textContent="Микрофон клавиатуры: нажмите на поле, переключите клавиатуру на латышскую (🌐) и нажмите 🎙. Что запишется — не исправляйте.";
+  box.appendChild(help);
+}
+function checkSay(q){
+  const heard=$("ans").value.trim();if(!heard){toast("Скажите слово в микрофон");return}
+  const sc=sayScore(heard,q.w[0].replace("…","")),ok=sc>=80;q.tries++;
+  G.checked=true;
+  if(ok){G.right++;G.combo++;G.best=Math.max(G.best,G.combo);const gain=5*mult()+(sc===100?5:0);G.xp+=gain;sfx.ok();
+    S.errors=S.errors.filter(e=>e[0]!==q.w[0])}
+  else{G.wrong++;G.combo=0;sfx.no();$("qbox").classList.add("shake");setTimeout(()=>$("qbox").classList.remove("shake"),400);
+    if(q.tries<2)G.qs.push(q)} // ещё одна попытка в конце
+  const fb=$("fb");fb.hidden=false;$("sheet").className="sheet "+(ok?"ok":"no");fb.innerHTML="";
+  fb.append((sc===100?"Отлично! ":ok?"Хорошо! ":"Не совсем. ")+sc+" из 100");
+  const sm=document.createElement("small");
+  const tips=sayTips(heard,q.w[0]);
+  sm.textContent="Телефон услышал: «"+heard+"». Нужно: «"+q.w[0]+"» ["+q.w[1]+"]"+(tips.length&&sc<100?". Совет: "+tips.join("; "):"");
+  fb.appendChild(sm);$("go").textContent="Дальше";
+}
+
 function check(){
   const q=G.qs[G.k];let ok=false,almost=false,correct="";
+  if(q.type==="say")return checkSay(q);
   if(q.type==="lv2ru"||q.type==="ru2lv"){if(G.sel==null){toast("Выберите ответ");return}ok=G.sel===G.right_;correct=G.right_;
     [...document.querySelectorAll(".opt")].forEach(b=>{if(b.textContent===G.right_)b.classList.add("right");else if(b.textContent===G.sel)b.classList.add("wrong")})}
   else if(q.type==="type"){const v=$("ans").value;if(!v.trim()){toast("Напишите ответ");return}
@@ -477,6 +546,9 @@ function finish(lost){
   }else if(G.mode==="blitz"){title=G.right+" за 60 секунд";
     sub=G.right>S.blitzBest?"Новый рекорд! Было "+S.blitzBest+".":"Рекорд: "+S.blitzBest+". Попробуйте побить!";
     S.blitzBest=Math.max(S.blitzBest,G.right);stars=G.right>=20?3:G.right>=12?2:G.right>=5?1:0;if(G.right>=15)award("blitz15")}
+  else if(G.mode==="say"){const n=G.qs.filter((q,i,a)=>a.indexOf(q)===i).length;
+    title="Произношение: "+G.right+" из "+n;stars=G.right>=n?3:G.right>=n*.6?2:G.right>0?1:0;
+    sub=G.right>=n?"Телефон понял все слова — вас поймут и люди!":"Слова с ошибками попадут в повторение. Говорите медленно и тяните долгие гласные."}
   else{title="Ошибки исправлены";sub="Осталось на исправление: "+S.errors.length;stars=acc>=80?3:acc>=50?2:1}
   if(G.best>=10)award("combo10");
   // серия дней
@@ -491,7 +563,7 @@ function finish(lost){
   show("result");if(!lost&&stars>0){sfx.win();burst(stars*40)}else sfx.no();
 }
 $("rNext").onclick=()=>{show("home");renderHome()};
-$("blitzBtn").onclick=startBlitz;$("fixBtn").onclick=startFix;
+$("blitzBtn").onclick=startBlitz;$("fixBtn").onclick=startFix;$("sayBtn").onclick=startSay;
 
 renderHome();
 if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
