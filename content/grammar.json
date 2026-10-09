@@ -1,0 +1,359 @@
+{
+ "grammar": [
+  {
+   "week": 1,
+   "title": "Алфавит, долгие гласные и ударение",
+   "text": "Латышский читается почти так, как пишется. Черта над гласной (ā, ē, ī, ū) значит: звук долгий, тянем его в два раза дольше. От этого меняется смысл слова. Галочка (č, š, ž) даёт звуки ч, ш, ж. Запятая под буквой (ķ, ģ, ļ, ņ) делает звук мягким. Ударение почти всегда на первом слоге: Rīga, labdien, paldies.",
+   "table": [
+    ["Буквы", "Звук", "Пример"],
+    ["ā ē ī ū", "долгий гласный", "māja, mēs, vīns, ūdens"],
+    ["č š ž", "ч, ш, ж", "čau, šodien, žurnāls"],
+    ["ķ ģ", "мягкие к, г", "ķirsis, ģimene"],
+    ["ļ ņ", "мягкие л, н", "ļoti, ņemt"],
+    ["ударение", "1-й слог", "Rīga, labdien"]
+   ],
+   "examples": [
+    ["Labdien!", "Добрый день!"],
+    ["Paldies!", "Спасибо!"],
+    ["Lūdzu.", "Пожалуйста."],
+    ["Ļoti labi.", "Очень хорошо."],
+    ["Mana ģimene.", "Моя семья."]
+   ]
+  },
+  {
+   "week": 2,
+   "title": "Мужской и женский род. Глагол būt (быть)",
+   "text": "Род видно по окончанию. Мужской род: -s, -š, -is (tēvs, mežs, brālis). Женский род: -a, -e (māja, māte). Среднего рода нет. Глагол būt («быть») по-русски часто пропускают, а по-латышски он нужен всегда: «Я Анна» = Es esmu Anna. Для он, она, они одна форма: ir.",
+   "table": [
+    ["Кто", "būt"],
+    ["es", "esmu"],
+    ["tu", "esi"],
+    ["viņš / viņa / viņi", "ir"],
+    ["mēs", "esam"],
+    ["jūs", "esat"]
+   ],
+   "examples": [
+    ["Es esmu Olga.", "Я Ольга."],
+    ["Tu esi students?", "Ты студент?"],
+    ["Viņš ir ārsts.", "Он врач."],
+    ["Viņa ir skolotāja.", "Она учительница."],
+    ["Māja ir liela.", "Дом большой."]
+   ]
+  },
+  {
+   "week": 3,
+   "title": "Настоящее время: глаголы на -āt, -ot",
+   "text": "Многие частые глаголы оканчиваются на -āt или -ot: strādāt (работать), runāt (говорить), dzīvot (жить). Уберите -t. Для «я» добавьте -ju, для «мы» -jam, для «вы» -jat. Для «ты», «он», «она», «они» ничего не добавляйте: tu strādā, viņš strādā, viņi strādā. Для он и они форма одна и та же.",
+   "table": [
+    ["Кто", "strādāt", "runāt", "dzīvot"],
+    ["es", "strādāju", "runāju", "dzīvoju"],
+    ["tu", "strādā", "runā", "dzīvo"],
+    ["viņš / viņi", "strādā", "runā", "dzīvo"],
+    ["mēs", "strādājam", "runājam", "dzīvojam"],
+    ["jūs", "strādājat", "runājat", "dzīvojat"]
+   ],
+   "examples": [
+    ["Es strādāju birojā.", "Я работаю в офисе."],
+    ["Tu runā latviski?", "Ты говоришь по-латышски?"],
+    ["Mēs dzīvojam Rīgā.", "Мы живём в Риге."],
+    ["Jūs runājat krieviski?", "Вы говорите по-русски?"],
+    ["Viņi strādā veikalā.", "Они работают в магазине."]
+   ]
+  },
+  {
+   "week": 4,
+   "title": "Что? Кого? (ko?) — покупаем и заказываем",
+   "text": "Когда вы что-то покупаете, берёте, хотите или пьёте, слово меняет окончание, как в русском «вода → воду». Правило простое: -s и -a становятся -u, а -e и -is становятся -i. Ūdens (вода) — особое слово: ūdeni. Очень полезная фраза в кафе: Lūdzu, vienu kafiju! (Один кофе, пожалуйста!)",
+   "table": [
+    ["Что это?", "Ko? (беру что?)", "Правило"],
+    ["ābols", "ābolu", "-s → -u"],
+    ["kafija", "kafiju", "-a → -u"],
+    ["maize", "maizi", "-e → -i"],
+    ["brālis", "brāli", "-is → -i"],
+    ["ūdens", "ūdeni", "особое"]
+   ],
+   "examples": [
+    ["Lūdzu, vienu kafiju!", "Один кофе, пожалуйста!"],
+    ["Es pērku maizi.", "Я покупаю хлеб."],
+    ["Es ņemu tēju.", "Я беру чай."],
+    ["Es dzeru ūdeni.", "Я пью воду."],
+    ["Lūdzu, rēķinu!", "Счёт, пожалуйста!"]
+   ]
+  },
+  {
+   "week": 5,
+   "title": "Чей? Откуда? (kā?) и «у меня есть»",
+   "text": "Эта форма отвечает на вопросы «чей?» и «откуда?». -s → -a (drauga), -a → -as (Annas), -e → -es (mātes). После no («из, от») всегда эта форма: no Rīgas. «У меня есть» = man ir (дословно «мне есть»): man ir, tev ir, viņam ir, viņai ir. «У меня нет» = man nav, и после nav тоже эта форма: Man nav laika.",
+   "table": [
+    ["Кто/что", "Kā? (чей, откуда)", "Пример"],
+    ["Rīga", "Rīgas", "no Rīgas"],
+    ["Anna", "Annas", "Annas māja"],
+    ["draugs", "drauga", "drauga suns"],
+    ["māte", "mātes", "mātes vārds"],
+    ["laiks", "laika", "man nav laika"]
+   ],
+   "examples": [
+    ["Es braucu no Rīgas.", "Я еду из Риги."],
+    ["Šī ir Annas māja.", "Это дом Анны."],
+    ["Man ir brālis.", "У меня есть брат."],
+    ["Man ir divi bērni.", "У меня двое детей."],
+    ["Man nav mašīnas.", "У меня нет машины."]
+   ]
+  },
+  {
+   "week": 6,
+   "title": "Где? (kur?) и «у меня болит»",
+   "text": "Чтобы сказать «где», меняем окончание: -a и -s → -ā (Rīgā, veikalā), -e → -ē (upē), -is → -ī (skapī). Предлог «в» не нужен: в Риге = Rīgā. «У меня болит» = man sāp (дословно «мне болит»): Man sāp galva. Про другого человека: viņam sāp (у него), viņai sāp (у неё).",
+   "table": [
+    ["Что", "Kur? (где)", "Правило"],
+    ["Rīga", "Rīgā", "-a → -ā"],
+    ["veikals", "veikalā", "-s → -ā"],
+    ["darbs", "darbā", "-s → -ā"],
+    ["upe", "upē", "-e → -ē"],
+    ["skapis", "skapī", "-is → -ī"]
+   ],
+   "examples": [
+    ["Es dzīvoju Rīgā.", "Я живу в Риге."],
+    ["Mamma ir veikalā.", "Мама в магазине."],
+    ["Es esmu darbā.", "Я на работе."],
+    ["Man sāp galva.", "У меня болит голова."],
+    ["Viņam sāp zobs.", "У него болит зуб."]
+   ]
+  },
+  {
+   "week": 7,
+   "title": "Частые неправильные глаголы и «не»",
+   "text": "Эти глаголы нужно просто выучить: iet (идти), dot (давать), ēst (есть). Ещё gribēt (хотеть): gribu, gribi, grib, gribam, gribat. Отрицание: ne пишется слитно с глаголом: neeju, negribu, neēdu. Особый случай: «он не (есть)» = viņš nav, а не «ne ir». Es neesmu — я не (являюсь).",
+   "table": [
+    ["Кто", "iet", "dot", "ēst"],
+    ["es", "eju", "dodu", "ēdu"],
+    ["tu", "ej", "dod", "ēd"],
+    ["viņš / viņi", "iet", "dod", "ēd"],
+    ["mēs", "ejam", "dodam", "ēdam"],
+    ["jūs", "ejat", "dodat", "ēdat"]
+   ],
+   "examples": [
+    ["Es eju uz darbu.", "Я иду на работу."],
+    ["Es negribu kafiju.", "Я не хочу кофе."],
+    ["Mēs ēdam vakariņas.", "Мы ужинаем."],
+    ["Es neēdu gaļu.", "Я не ем мясо."],
+    ["Viņš nav mājās.", "Его нет дома."]
+   ]
+  },
+  {
+   "week": 8,
+   "title": "Кому? (kam?)",
+   "text": "Форма «кому?» нужна с глаголами dot (давать), zvanīt (звонить), palīdzēt (помогать) и в фразе man patīk (мне нравится). Окончания: -s → -am (draugam), -is → -im (brālim), -a → -ai (mammai), -e → -ei (mātei). Местоимения: man, tev, viņam, viņai, mums, jums.",
+   "table": [
+    ["Кто", "Кому?", "Слово", "Кому?"],
+    ["es", "man", "draugs", "draugam"],
+    ["tu", "tev", "brālis", "brālim"],
+    ["viņš", "viņam", "mamma", "mammai"],
+    ["viņa", "viņai", "māte", "mātei"],
+    ["mēs / jūs", "mums / jums", "māsa", "māsai"]
+   ],
+   "examples": [
+    ["Es dodu mammai ziedus.", "Я дарю маме цветы."],
+    ["Es zvanu draugam.", "Я звоню другу."],
+    ["Man patīk kafija.", "Мне нравится кофе."],
+    ["Tev patīk Rīga?", "Тебе нравится Рига?"],
+    ["Viņai ir trīs bērni.", "У неё трое детей."]
+   ]
+  },
+  {
+   "week": 9,
+   "title": "Вопросы, порядок слов и «мне нужно»",
+   "text": "Порядок слов как в русском: кто — что делает — остальное. Вопросительное слово ставим в начало: Kur ir veikals? Если вопрос без такого слова, начните с Vai: Vai tu runā latviski? «Мне нужно» = man vajag. После vajag ставим форму «что?»: Man vajag ārstu. Или глагол: Man vajag strādāt.",
+   "table": [
+    ["Слово", "Значение", "Пример"],
+    ["Kas?", "Кто? Что?", "Kas tas ir?"],
+    ["Kur?", "Где?", "Kur ir aptieka?"],
+    ["Kad?", "Когда?", "Kad tu strādā?"],
+    ["Cik?", "Сколько?", "Cik maksā?"],
+    ["Kāpēc?", "Почему?", "Kāpēc tu nenāc?"]
+   ],
+   "examples": [
+    ["Vai tu esi mājās?", "Ты дома?"],
+    ["Cik maksā kafija?", "Сколько стоит кофе?"],
+    ["Kur ir aptieka?", "Где аптека?"],
+    ["Man vajag ārstu.", "Мне нужен врач."],
+    ["Mums vajag palīdzību.", "Нам нужна помощь."]
+   ]
+  },
+  {
+   "week": 10,
+   "title": "Множественное число",
+   "text": "Мужской род: -s и -is → -i (galdi, kaķi). Женский род: -a → -as (mājas), -e → -es (upes). Внимание: в некоторых словах на -is меняется согласная: brālis → brāļi. Прилагательные тоже меняются: lieli galdi, lielas mājas. Глагол «быть» для «они» всё так же ir: Bērni ir skolā.",
+   "table": [
+    ["Один", "Много", "Правило"],
+    ["galds", "galdi", "-s → -i"],
+    ["kaķis", "kaķi", "-is → -i"],
+    ["māja", "mājas", "-a → -as"],
+    ["upe", "upes", "-e → -es"],
+    ["brālis", "brāļi", "-is → -i (+ļ)"]
+   ],
+   "examples": [
+    ["Man ir divi brāļi.", "У меня два брата."],
+    ["Mājas ir lielas.", "Дома большие."],
+    ["Bērni ir skolā.", "Дети в школе."],
+    ["Kur ir veikali?", "Где магазины?"],
+    ["Āboli ir garšīgi.", "Яблоки вкусные."]
+   ]
+  },
+  {
+   "week": 11,
+   "title": "Прошедшее время: «я был, я ходил»",
+   "text": "Глаголы на -āt, -ot, -ēt: уберите -t и добавьте -ju: strādāju, dzīvoju, gribēju. Форма «я» для -āt и -ot совпадает с настоящим временем, поэтому добавляйте vakar (вчера) или sestdien (в субботу). Частые глаголы учим: biju, gāju, devu, ēdu, pirku. Для «ты» окончание -i (tu biji), для «он, она, они» -a (viņš bija).",
+   "table": [
+    ["Глагол", "Сейчас (es)", "Раньше (es)"],
+    ["būt", "esmu", "biju"],
+    ["iet", "eju", "gāju"],
+    ["dot", "dodu", "devu"],
+    ["pirkt", "pērku", "pirku"],
+    ["gribēt", "gribu", "gribēju"]
+   ],
+   "examples": [
+    ["Vakar es biju darbā.", "Вчера я был на работе."],
+    ["Es gāju uz veikalu.", "Я ходил в магазин."],
+    ["Es nopirku maizi.", "Я купил хлеб."],
+    ["Sestdien es strādāju.", "В субботу я работал."],
+    ["Viņa bija Siguldā.", "Она была в Сигулде."]
+   ]
+  },
+  {
+   "week": 12,
+   "title": "Будущее время и повторение",
+   "text": "Уберите -t и добавьте: es -šu, tu -si, viņš/viņi -s, mēs -sim, jūs -siet. Пример: strādāt → strādāšu, strādāsi, strādās. Особые: ēst → ēdīšu, iet → iešu, dot → došu. Повторите все 12 недель: būt (esmu / biju / būšu), формы ko?, kā?, kur?, kam? и man ir, man sāp, man vajag.",
+   "table": [
+    ["Глагол", "es", "tu", "viņš / viņi"],
+    ["būt", "būšu", "būsi", "būs"],
+    ["strādāt", "strādāšu", "strādāsi", "strādās"],
+    ["iet", "iešu", "iesi", "ies"],
+    ["braukt", "braukšu", "brauksi", "brauks"],
+    ["ēst", "ēdīšu", "ēdīsi", "ēdīs"]
+   ],
+   "examples": [
+    ["Rīt es būšu mājās.", "Завтра я буду дома."],
+    ["Sestdien mēs brauksim uz Jūrmalu.", "В субботу мы поедем в Юрмалу."],
+    ["Es zvanīšu tev vakarā.", "Я позвоню тебе вечером."],
+    ["Es iešu pie ārsta.", "Я пойду к врачу."],
+    ["Viņa būs priecīga.", "Она будет рада."]
+   ]
+  }
+ ],
+ "writing": [
+  {
+   "week": 5,
+   "task": "Напишите SMS новой подруге Инге (3–5 предложений): откуда вы, где живёте сейчас, кто есть в вашей семье.",
+   "sample": "Čau, Inga! Es esmu no Krievijas, bet tagad dzīvoju Rīgā. Man ir vīrs un divi bērni. Mana meita ir Anna, un mans dēls ir Marks. Man ir arī suns."
+  },
+  {
+   "week": 6,
+   "task": "Напишите SMS коллеге Петерису (3–5 предложений): сегодня вас нет на работе, вы дома, что у вас болит.",
+   "sample": "Labdien, Pēteri! Šodien es neesmu darbā. Es esmu mājās. Man sāp galva un kakls. Paldies, Olga."
+  },
+  {
+   "week": 7,
+   "task": "Напишите сообщение подруге Марте (3–5 предложений): что вы едите и пьёте утром, чего не едите и что хотите сегодня на ужин.",
+   "sample": "Čau, Marta! No rīta es ēdu maizi un sieru. Es dzeru kafiju. Es neēdu gaļu. Šodien vakariņās es gribu zivi. Un tu?"
+  },
+  {
+   "week": 8,
+   "task": "Напишите записку соседу (3–5 предложений): в выходные вас нет дома, ключ у вашей сестры Анны, где она живёт.",
+   "sample": "Labdien! Es esmu Olga no 12. dzīvokļa. Sestdien un svētdien es neesmu mājās. Atslēga ir manai māsai Annai. Viņa dzīvo 3. dzīvoklī. Paldies!"
+  },
+  {
+   "week": 9,
+   "task": "Напишите короткое сообщение в регистратуру поликлиники (3–5 предложений): кто вы, что у вас болит, вам нужно к врачу, спросите, работает ли врач в пятницу.",
+   "sample": "Labdien! Mans vārds ir Olga Ivanova. Man sāp mugura. Man vajag pierakstīties pie ārsta. Vai ārsts strādā piektdien? Paldies!"
+  },
+  {
+   "week": 10,
+   "task": "Заполните анкету языковой школы полными предложениями (4–5 предложений): имя, откуда вы, где живёте, какие языки знаете, что вам нравится.",
+   "sample": "Mans vārds ir Olga Ivanova. Es esmu no Krievijas. Es dzīvoju Rīgā, Brīvības ielā. Es runāju krieviski un mazliet latviski. Man patīk grāmatas un filmas."
+  },
+  {
+   "week": 11,
+   "task": "Напишите короткое письмо подруге Илзе (3–5 предложений) о том, как вы провели субботу: где были, что делали, какая была погода.",
+   "sample": "Sveika, Ilze! Sestdien es biju Jūrmalā. Es gāju pa pludmali. Laiks bija auksts, bet saulains. Vakarā es ēdu zivi restorānā. Bija ļoti jauki!"
+  },
+  {
+   "week": 12,
+   "task": "Напишите короткое письмо другу Андрису (3–5 предложений): пригласите его на день рождения в субботу, скажите время и что будет.",
+   "sample": "Sveiks, Andri! Sestdien man būs dzimšanas diena. Es gaidīšu tevi mājās pulksten septiņos. Būs kūka un mūzika. Vai tu nāksi? Olga"
+  }
+ ],
+ "checks": [
+  {"week": 1, "q": "Как звучит буква «š»?", "opts": ["с", "ш", "щ", "ж"], "a": 1},
+  {"week": 1, "q": "На какой слог обычно падает ударение?", "opts": ["на первый", "на последний", "на второй", "на любой"], "a": 0},
+  {"week": 1, "q": "Что значит «paldies»?", "opts": ["пожалуйста", "привет", "спасибо", "до свидания"], "a": 2},
+  {"week": 1, "q": "В каком слове долгий гласный?", "opts": ["man", "tev", "es", "mēs"], "a": 3},
+  {"week": 1, "q": "Как пишется «очень»?", "opts": ["loti", "ļoti", "lloti", "ljoti"], "a": 1},
+
+  {"week": 2, "q": "Какого рода слово «māja»?", "opts": ["мужского", "женского", "среднего", "без рода"], "a": 1},
+  {"week": 2, "q": "Какое слово мужского рода?", "opts": ["skola", "upe", "galds", "māte"], "a": 2},
+  {"week": 2, "q": "Es ___ Anna.", "opts": ["ir", "esi", "esam", "esmu"], "a": 3},
+  {"week": 2, "q": "Viņš ___ ārsts.", "opts": ["ir", "esmu", "esat", "esi"], "a": 0},
+  {"week": 2, "q": "Mēs ___ draugi.", "opts": ["ir", "esam", "esmu", "esi"], "a": 1},
+
+  {"week": 3, "q": "Как сказать «я работаю»?", "opts": ["es strādā", "es strādājam", "es strādāju", "es strādāt"], "a": 2},
+  {"week": 3, "q": "Mēs ___ latviski. (runāt)", "opts": ["runājam", "runāju", "runā", "runājat"], "a": 0},
+  {"week": 3, "q": "Tu ___ Rīgā? (dzīvot)", "opts": ["dzīvoju", "dzīvo", "dzīvojam", "dzīvojat"], "a": 1},
+  {"week": 3, "q": "Jūs ___ birojā. (strādāt)", "opts": ["strādā", "strādāju", "strādājam", "strādājat"], "a": 3},
+  {"week": 3, "q": "Как сказать «они говорят»?", "opts": ["viņi runā", "viņi runāju", "viņi runājam", "viņi runāt"], "a": 0},
+
+  {"week": 4, "q": "Lūdzu, vienu ___! (kafija)", "opts": ["kafija", "kafiju", "kafijā", "kafijas"], "a": 1},
+  {"week": 4, "q": "Es pērku ___. (maize)", "opts": ["maize", "maizē", "maizi", "maizes"], "a": 2},
+  {"week": 4, "q": "Es ēdu ___. (ābols)", "opts": ["ābols", "ābolā", "ābola", "ābolu"], "a": 3},
+  {"week": 4, "q": "Как сказать «Счёт, пожалуйста!»?", "opts": ["Lūdzu, rēķinu!", "Paldies, rēķins!", "Rēķinā, lūdzu!", "Rēķins ir lūdzu!"], "a": 0},
+  {"week": 4, "q": "Es dzeru ___. (ūdens)", "opts": ["ūdens", "ūdeni", "ūdenī", "ūdenu"], "a": 1},
+
+  {"week": 5, "q": "Es esmu no ___. (Rīga)", "opts": ["Rīga", "Rīgā", "Rīgas", "Rīgu"], "a": 2},
+  {"week": 5, "q": "Как сказать «у меня есть брат»?", "opts": ["Man ir brālis.", "Es ir brālis.", "Mani ir brālis.", "Man esmu brālis."], "a": 0},
+  {"week": 5, "q": "Šī ir ___ māja. (Anna)", "opts": ["Anna", "Annas", "Annai", "Annu"], "a": 1},
+  {"week": 5, "q": "Как сказать «у меня нет времени»?", "opts": ["Man ir laiks.", "Man nav laiku.", "Man nav laika.", "Es nav laika."], "a": 2},
+  {"week": 5, "q": "Tā ir ___ mašīna. (draugs)", "opts": ["draugs", "draugu", "draugam", "drauga"], "a": 3},
+
+  {"week": 6, "q": "Es dzīvoju ___. (Rīga)", "opts": ["Rīgā", "Rīga", "Rīgas", "Rīgu"], "a": 0},
+  {"week": 6, "q": "Mamma ir ___. (veikals)", "opts": ["veikals", "veikalā", "veikalu", "veikala"], "a": 1},
+  {"week": 6, "q": "Как сказать «у меня болит голова»?", "opts": ["Es sāp galva.", "Man sāp galvu.", "Man sāp galva.", "Mani sāp galva."], "a": 2},
+  {"week": 6, "q": "Kur tu esi? — Es esmu ___. (darbs)", "opts": ["darbs", "darba", "darbu", "darbā"], "a": 3},
+  {"week": 6, "q": "Что значит «Viņam sāp zobs»?", "opts": ["У него болит зуб.", "У неё болит зуб.", "У меня болит зуб.", "Он лечит зуб."], "a": 0},
+
+  {"week": 7, "q": "Es ___ uz darbu. (iet)", "opts": ["iet", "eju", "ejam", "ej"], "a": 1},
+  {"week": 7, "q": "Mēs ___ vakariņas. (ēst)", "opts": ["ēdu", "ēd", "ēdam", "ēdat"], "a": 2},
+  {"week": 7, "q": "Как сказать «я не хочу»?", "opts": ["es nav gribu", "es ne grib", "es negribi", "es negribu"], "a": 3},
+  {"week": 7, "q": "Его нет дома: Viņš ___ mājās.", "opts": ["nav", "neir", "neesmu", "ne ir"], "a": 0},
+  {"week": 7, "q": "Tu ___ man maizi? (dot)", "opts": ["dodu", "dod", "dodam", "dot"], "a": 1},
+
+  {"week": 8, "q": "Кому? tu → ___", "opts": ["tevi", "tev", "tu", "tavs"], "a": 1},
+  {"week": 8, "q": "Es dodu ___ ziedus. (mamma)", "opts": ["mamma", "mammu", "mammai", "mammas"], "a": 2},
+  {"week": 8, "q": "Es zvanu ___. (draugs)", "opts": ["draugam", "draugs", "draugu", "draugā"], "a": 0},
+  {"week": 8, "q": "Как сказать «ей нравится кофе»?", "opts": ["Viņa patīk kafija.", "Viņu patīk kafija.", "Viņam patīk kafija.", "Viņai patīk kafija."], "a": 3},
+  {"week": 8, "q": "Кому? mēs → ___", "opts": ["mēs", "mūs", "mums", "mūsu"], "a": 2},
+
+  {"week": 9, "q": "Как спросить «Ты говоришь по-латышски?»", "opts": ["Vai tu runā latviski?", "Kur tu runā latviski?", "Tu vai runā latviski?", "Kas tu runā latviski?"], "a": 0},
+  {"week": 9, "q": "Что значит «Cik maksā?»", "opts": ["Где это?", "Сколько стоит?", "Когда?", "Что это?"], "a": 1},
+  {"week": 9, "q": "Как сказать «мне нужен врач»?", "opts": ["Es vajag ārsts.", "Man vajag ārsts ir.", "Man vajag ārstu.", "Mani vajag ārstu."], "a": 2},
+  {"week": 9, "q": "Какое слово значит «где?»", "opts": ["kad", "kas", "cik", "kur"], "a": 3},
+  {"week": 9, "q": "Что значит «Kāpēc?»", "opts": ["Почему?", "Как?", "Куда?", "Чей?"], "a": 0},
+
+  {"week": 10, "q": "galds → много?", "opts": ["galdas", "galdi", "galdes", "galds"], "a": 1},
+  {"week": 10, "q": "māja → много?", "opts": ["mājas", "māji", "mājes", "mājai"], "a": 0},
+  {"week": 10, "q": "upe → много?", "opts": ["upi", "upas", "upes", "upēs"], "a": 2},
+  {"week": 10, "q": "Как сказать «два брата»?", "opts": ["divi brālis", "divi brāli", "divi brālas", "divi brāļi"], "a": 3},
+  {"week": 10, "q": "Bērni ir skolā. Что значит «bērni»?", "opts": ["ребёнок", "дети", "школы", "учителя"], "a": 1},
+
+  {"week": 11, "q": "Vakar es ___ mājās. (būt)", "opts": ["esmu", "būšu", "biju", "bija"], "a": 2},
+  {"week": 11, "q": "iet → вчера я ___", "opts": ["gāju", "eju", "iešu", "gāja"], "a": 0},
+  {"week": 11, "q": "dot → вчера я ___", "opts": ["dodu", "devu", "došu", "doju"], "a": 1},
+  {"week": 11, "q": "Как сказать «он был в Риге»?", "opts": ["Viņš biju Rīgā.", "Viņš ir Rīgā.", "Viņš būs Rīgā.", "Viņš bija Rīgā."], "a": 3},
+  {"week": 11, "q": "Что значит «vakar»?", "opts": ["сегодня", "завтра", "вчера", "вечер"], "a": 2},
+
+  {"week": 12, "q": "būt → завтра я ___", "opts": ["biju", "esmu", "būšu", "būs"], "a": 2},
+  {"week": 12, "q": "Как сказать «я буду работать»?", "opts": ["es strādāšu", "es strādāju", "es strādāsim", "es strādās"], "a": 0},
+  {"week": 12, "q": "Mēs ___ uz Jūrmalu. (braukt, будущее)", "opts": ["braucām", "brauksim", "braucu", "braukšu"], "a": 1},
+  {"week": 12, "q": "Что значит «rīt»?", "opts": ["вчера", "утро", "сегодня", "завтра"], "a": 3},
+  {"week": 12, "q": "ēst → я буду есть: es ___", "opts": ["ēstšu", "ēdu", "ēdīšu", "ēšu"], "a": 2}
+ ]
+}
