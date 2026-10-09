@@ -1,6 +1,6 @@
 // Хранит приложение на телефоне: без интернета берёт из памяти,
 // с интернетом сначала проверяет новую версию.
-const CACHE = "dzintars-v2";
+const CACHE = "dzintars-v3";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -17,6 +17,8 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
+  // модель распознавания и библиотека с других сайтов — не трогаем, они кэшируются сами
+  if (new URL(e.request.url).origin !== location.origin) return;
   if (e.request.mode === "navigate") {
     // страница: сеть, если есть; иначе сохранённая копия
     e.respondWith(

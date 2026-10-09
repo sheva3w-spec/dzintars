@@ -150,8 +150,6 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
     <button class="big b-dark" id="blitzBtn" type="button">⚡ Блиц 60 сек</button>
     <button class="big b-dark" id="fixBtn" type="button">🩹 Ошибки (<span id="errN">0</span>)</button>
   </div>
-  <button class="big b-amber" id="sayBtn" type="button">🎤 Проверка произношения</button>
-
   <div class="map" id="map"></div>
 
   <h3>Награды</h3>
@@ -379,8 +377,8 @@ function renderQ(){
     kind.textContent="Новое слово "+(G.k+1)+" из "+nLearn;pr.textContent=q.w[0];sub.textContent="Читается: ["+q.w[1]+"]";
     const ru=document.createElement("div");ru.className="prompt";ru.style.color="var(--amber)";ru.style.fontSize="1.6rem";ru.textContent="= "+q.w[2];
     box.appendChild(ru);addSay(q.w[0]);speak(q.w[0]);
-    const tip=document.createElement("div");tip.className="sub";tip.textContent="Прочитайте вслух 2 раза. Потом — «Запомнил».";box.appendChild(tip);
-    go.textContent="Запомнил →";G.checked=true;$("combo").textContent="";
+    renderMic(q,box);
+    go.textContent="Дальше →";G.checked=true;$("combo").textContent="";
   }else if(q.type==="lv2ru"){
     kind.textContent="Что это значит?";pr.textContent=q.w[0];sub.textContent="["+q.w[1]+"]";addSay(q.w[0]);
     options(q.opts.map(o=>o[2]),q.w[2]);
@@ -427,11 +425,84 @@ function options(list,right){
 const mult=()=>G.combo>=10?3:G.combo>=5?2:1;
 
 /* ============ ПРОИЗНОШЕНИЕ ============
-   Телефон превращает речь в текст; если записалось то же слово — сказано понятно.
-   1) микрофон браузера (lv-LV), если он работает здесь;
-   2) иначе микрофон клавиатуры: человек диктует в поле, мы сравниваем. */
+   Человек говорит слово в микрофон, распознавание превращает речь в текст.
+   Если записалось то же слово — сказано понятно.
+   iPhone: латышский у Apple не распознаётся, поэтому Whisper прямо в телефоне
+   (модель скачивается один раз из интернета). Android/компьютер: распознавание браузера. */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let srBroken=false;
+const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+let srBroken=false,asrPromise=null,asrPct=0,micStream=null;
+
+function loadWhisper(){
+  if(asrPromise)return asrPromise;
+  const files={};
+  asrPromise=import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2").then(T=>{
+    T.env.allowLocalModels=false;
+    return T.pipeline("automatic-speech-recognition","Xenova/whisper-base",{quantized:true,progress_callback:p=>{
+      if(p.status==="progress"&&p.total){files[p.file]=[p.loaded,p.total];
+        const v=Object.values(files),l=v.reduce((s,x)=>s+x[0],0),t=v.reduce((s,x)=>s+x[1],0);asrPct=Math.round(l/t*100);
+        const b=$("micBtn");if(b&&b.dataset.loading)b.textContent="⏳ Загружаю распознавание… "+asrPct+"%"}}});
+  }).catch(e=>{asrPromise=null;throw e});
+  return asrPromise;
+}
+async function recordPcm(ms,onTick){
+  if(!micStream)micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+  const rec=new MediaRecorder(micStream),chunks=[];
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  const done=new Promise(r=>rec.onstop=r);
+  rec.start();
+  for(let s=Math.ceil(ms/1000);s>0;s--){onTick(s);await new Promise(r=>setTimeout(r,1000))}
+  rec.stop();await done;
+  const ab=await new Blob(chunks,{type:rec.mimeType}).arrayBuffer();
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  const buf=await ac.decodeAudioData(ab);ac.close&&ac.close();
+  const off=new OfflineAudioContext(1,Math.max(1,Math.ceil(buf.duration*16000)),16000);
+  const src=off.createBufferSource();src.buffer=buf;src.connect(off.destination);src.start();
+  return (await off.startRendering()).getChannelData(0);
+}
+// Возвращает то, что распознано (строка)
+async function listen(target,btn){
+  if(SR&&!IS_IOS&&!srBroken){
+    try{
+      return await new Promise((res,rej)=>{
+        const r=new SR();r.lang="lv-LV";r.interimResults=false;r.maxAlternatives=5;
+        r.onresult=e=>{const alts=[...e.results[0]].map(x=>x.transcript);res(alts.sort((a,b)=>sayScore(b,target)-sayScore(a,target))[0]||"")};
+        r.onerror=e=>rej(e.error||"error");r.onend=()=>res("");
+        btn.textContent="👂 Слушаю… говорите";r.start();
+      });
+    }catch(e){if(e==="no-speech")return "";srBroken=true}
+  }
+  btn.dataset.loading="1";btn.textContent="⏳ Загружаю распознавание… "+asrPct+"%";
+  const asr=await loadWhisper();delete btn.dataset.loading;
+  const pcm=await recordPcm(3000,s=>btn.textContent="🔴 Говорите… "+s);
+  btn.textContent="🤔 Проверяю…";
+  const out=await asr(pcm,{language:"latvian",task:"transcribe"});
+  return (out&&out.text||"").trim();
+}
+function renderMic(q,box){
+  if(IS_IOS)loadWhisper().catch(()=>{}); // начинаем загрузку заранее
+  const mic=document.createElement("button");mic.type="button";mic.id="micBtn";mic.className="big b-amber";mic.textContent="🎤 Скажите слово";
+  const res=document.createElement("div");res.className="fb";res.hidden=true;res.style.padding="12px 14px";res.style.borderRadius="14px";
+  mic.onclick=async()=>{
+    if(mic.disabled)return;mic.disabled=true;sfx.tap();
+    let heard="";
+    try{heard=await listen(q.w[0].replace("…",""),mic)}
+    catch(e){mic.disabled=false;mic.textContent="🎤 Скажите слово";
+      toast(String(e&&e.name||e).includes("NotAllowed")?"Разрешите доступ к микрофону":"Нужен интернет для первой загрузки. Попробуйте ещё раз");return}
+    mic.disabled=false;mic.textContent="🎤 Ещё раз";
+    heard=heard.replace(/[^\p{L}\s]/gu,"").trim(); // Whisper на тишину выдаёт «♫»
+    if(!heard){toast("Ничего не слышно — скажите громче");return}
+    const sc=sayScore(heard,q.w[0].replace("…","")),ok=sc>=80;
+    if(!q.scored&&ok){q.scored=true;const gain=sc===100?10:5;G.xp+=gain;G.right++;toast("+"+gain+" янтаря")}
+    ok?sfx.ok():sfx.no();
+    res.hidden=false;res.style.background=ok?"#173523":"#3a1a1d";res.textContent="";
+    res.append((sc===100?"Отлично! ":ok?"Хорошо! ":"Ещё раз! ")+sc+" из 100");
+    const sm=document.createElement("small");const tips=sayTips(heard,q.w[0]);
+    sm.textContent="Услышано: «"+heard+"»"+(sc<100&&tips.length?". Совет: "+tips.join("; "):"");res.appendChild(sm);
+    if(!ok)S.errors.some(e=>e[0]===q.w[0])||S.errors.push(q.w);
+  };
+  box.append(mic,res);
+}
 function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
   for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
 function sayScore(heard,want){const a=norm(heard),b=norm(want);if(!a)return 0;return Math.max(0,Math.round((1-lev(a,b)/Math.max(a.length,b.length))*100))}
@@ -563,7 +634,7 @@ function finish(lost){
   show("result");if(!lost&&stars>0){sfx.win();burst(stars*40)}else sfx.no();
 }
 $("rNext").onclick=()=>{show("home");renderHome()};
-$("blitzBtn").onclick=startBlitz;$("fixBtn").onclick=startFix;$("sayBtn").onclick=startSay;
+$("blitzBtn").onclick=startBlitz;$("fixBtn").onclick=startFix;
 
 renderHome();
 if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
