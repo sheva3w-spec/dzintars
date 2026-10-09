@@ -1,7 +1,8 @@
 // Хранит приложение на телефоне: без интернета берёт из памяти,
 // с интернетом сначала проверяет новую версию.
-const CACHE = "dzintars-v3";
-const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
+const CACHE = "dzintars-v4";
+const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png",
+  "content/part1.json", "content/part2.json", "content/grammar.json", "audio/index.json"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -28,7 +29,11 @@ self.addEventListener("fetch", e => {
     );
     return;
   }
+  // остальное: из памяти, а то, что скачали впервые (озвучка), — сохраняем для офлайна
   e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request))
+    caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request).then(r => {
+      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
+      return r;
+    }))
   );
 });
