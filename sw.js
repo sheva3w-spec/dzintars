@@ -1,5 +1,6 @@
-// Кэширует приложение при первом открытии, дальше работает без интернета.
-const CACHE = "dzintars-v1";
+// Хранит приложение на телефоне: без интернета берёт из памяти,
+// с интернетом сначала проверяет новую версию.
+const CACHE = "dzintars-v2";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -16,9 +17,16 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
+  if (e.request.mode === "navigate") {
+    // страница: сеть, если есть; иначе сохранённая копия
+    e.respondWith(
+      fetch(e.request)
+        .then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put("index.html", copy)); return r; })
+        .catch(() => caches.match("index.html"))
+    );
+    return;
+  }
   e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then(hit =>
-      hit || fetch(e.request).catch(() => caches.match("index.html"))
-    )
+    caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request))
   );
 });

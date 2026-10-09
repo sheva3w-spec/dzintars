@@ -244,7 +244,7 @@ const DAY_GOAL=50;
 /* ============ STATE ============ */
 const today=(()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()})();
 const yesterday=(()=>{const d=new Date(Date.now()-864e5);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()})();
-let S={xp:0,stars:{},streak:0,last:"",dayXp:0,day:"",errors:[],ach:[],blitzBest:0};
+let S={xp:0,stars:{},learned:{},streak:0,last:"",dayXp:0,day:"",errors:[],ach:[],blitzBest:0};
 try{const s=JSON.parse(localStorage.getItem("dzintars")||"null");if(s)S=Object.assign(S,s)}catch(e){}
 if(S.day!==today){S.day=today;S.dayXp=0}
 const save=()=>{try{localStorage.setItem("dzintars",JSON.stringify(S))}catch(e){}};
@@ -293,14 +293,15 @@ function renderHome(){
   $("errN").textContent=S.errors.length;
   const m=$("map");m.textContent="";
   LEVELS.forEach((L,i)=>{
-    const st=S.stars[i]||0,open=i===0||(S.stars[i-1]||0)>0;
+    const st=S.stars[i]||0,open=i===0||levelDone(i-1),ln=Math.min(S.learned[i]||0,L.w.length);
     if(i>0){const p=document.createElement("div");p.className="path"+(open?" lit":"");m.appendChild(p)}
     const w=document.createElement("div");w.className="nodewrap";w.style.transform="translateX("+[0,-60,-80,-40,30,70,60,0][i]+"px)";
     const b=document.createElement("button");b.type="button";b.className="node "+(st?"done":open?"open":"lock");
     b.textContent=open?L.i:"🔒";b.setAttribute("aria-label",L.n+(open?"":" — закрыто"));
     b.onclick=()=>{if(!open){sfx.no();toast("Сначала пройдите «"+LEVELS[i-1].n+"»");return}startLevel(i)};
     const nm=document.createElement("div");nm.className="nm";nm.textContent=L.n;
-    const s=document.createElement("div");s.className="st";s.textContent="★".repeat(st)+"☆".repeat(3-st);
+    const s=document.createElement("div");s.className="st";
+    s.textContent=st?"★".repeat(st)+"☆".repeat(3-st):open?"выучено "+ln+" из "+L.w.length:"";
     w.append(b,nm,s);m.appendChild(w);
   });
   const a=$("ach");a.textContent="";
@@ -324,17 +325,35 @@ function makeQs(levelIdx,count){
   }
   return qs;
 }
-function startLevel(i){G={mode:"level",level:i,qs:makeQs(i,12),k:0,hearts:3,right:0,wrong:0,combo:0,best:0,xp:0,sel:null};show("lesson");renderQ()}
+const BATCH=4; // новых слов за один урок
+function levelDone(i){return (S.stars[i]||0)>0||(S.learned[i]||0)>=LEVELS[i].w.length}
+function learnedWords(){return LEVELS.flatMap((L,i)=>L.w.slice(0,levelDone(i)?L.w.length:(S.learned[i]||0)))}
+// Лёгкие вопросы только по словам, которые только что показали
+function easyQs(batch,level){
+  const pool=batch.length>=4?batch:batch.concat(LEVELS[level].w.filter(w=>!batch.includes(w))).slice(0,4);
+  const mk=(type,w)=>({type,w,opts:shuffle([w,...pick(pool.filter(x=>x!==w),3)])});
+  return [...shuffle(batch).map(w=>mk("lv2ru",w)),...shuffle(batch).map(w=>mk("lv2ru",w)),...shuffle(batch).map(w=>mk("ru2lv",w))];
+}
+function startLevel(i){
+  const L=LEVELS[i],n=S.learned[i]||0;
+  let qs,batch=null;
+  if(n<L.w.length){
+    batch=L.w.slice(n,n+BATCH);
+    qs=[...batch.map(w=>({type:"learn",w})),...easyQs(batch,i)];
+  }else qs=makeQs(i,10); // повторение уровня целиком: тут уже письмо и фразы
+  G={mode:"level",level:i,batch,qs,k:0,hearts:5,right:0,wrong:0,combo:0,best:0,xp:0,sel:null};
+  show("lesson");renderQ();
+}
 function startFix(){
   if(!S.errors.length){toast("Ошибок нет — отлично!");return}
   const ws=S.errors.slice(-12).map(e=>e);
-  G={mode:"fix",qs:shuffle(ws).map(w=>({type:Math.random()<.5?"type":"ru2lv",w,opts:shuffle([w,...pick(LEVELS.flatMap(l=>l.w).filter(x=>x[0]!==w[0]),3)])})),k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0};
+  G={mode:"fix",qs:shuffle(ws).map(w=>({type:Math.random()<.5?"lv2ru":"ru2lv",w,opts:shuffle([w,...pick(LEVELS.flatMap(l=>l.w).filter(x=>x[0]!==w[0]),3)])})),k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0};
   show("lesson");renderQ();
 }
 let timer=0;
 function startBlitz(){
-  const open=LEVELS.map((L,i)=>i).filter(i=>i===0||(S.stars[i-1]||0)>0);
-  const pool=open.flatMap(i=>LEVELS[i].w);
+  const pool=learnedWords();
+  if(pool.length<4){toast("Сначала выучите хотя бы 4 слова в уроке");return}
   const qs=[];for(let k=0;k<80;k++){const w=pool[Math.random()*pool.length|0];qs.push({type:Math.random()<.5?"lv2ru":"ru2lv",w,opts:shuffle([w,...pick(pool.filter(x=>x!==w),3)])})}
   G={mode:"blitz",qs,k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0,end:Date.now()+60000};
   show("lesson");renderQ();clearInterval(timer);
@@ -353,7 +372,14 @@ function renderQ(){
   const sub=document.createElement("div");sub.className="sub";
   box.append(kind,pr,sub);
   const addSay=t=>{if(!lvVoice)return;const b=document.createElement("button");b.type="button";b.className="say";b.textContent="🔊 Послушать";b.onclick=()=>speak(t);box.appendChild(b)};
-  if(q.type==="lv2ru"){
+  if(q.type==="learn"){
+    const nLearn=G.qs.filter(x=>x.type==="learn").length;
+    kind.textContent="Новое слово "+(G.k+1)+" из "+nLearn;pr.textContent=q.w[0];sub.textContent="Читается: ["+q.w[1]+"]";
+    const ru=document.createElement("div");ru.className="prompt";ru.style.color="var(--amber)";ru.style.fontSize="1.6rem";ru.textContent="= "+q.w[2];
+    box.appendChild(ru);addSay(q.w[0]);speak(q.w[0]);
+    const tip=document.createElement("div");tip.className="sub";tip.textContent="Прочитайте вслух 2 раза. Потом — «Запомнил».";box.appendChild(tip);
+    go.textContent="Запомнил →";G.checked=true;$("combo").textContent="";
+  }else if(q.type==="lv2ru"){
     kind.textContent="Что это значит?";pr.textContent=q.w[0];sub.textContent="["+q.w[1]+"]";addSay(q.w[0]);
     options(q.opts.map(o=>o[2]),q.w[2]);
     if(G.mode==="blitz")speak(q.w[0]);
@@ -390,6 +416,11 @@ function options(list,right){
       if(G.mode==="blitz")check()};
     wrap.appendChild(b)});
   $("qbox").appendChild(wrap);G.right_=right;
+  if(G.mode!=="blitz"){
+    const h=document.createElement("button");h.type="button";h.className="say";h.textContent="💡 Подсказка";
+    h.onclick=()=>{if(G.checked)return;[...wrap.children].filter(b=>b.textContent!==right).slice(0,2).forEach(b=>b.hidden=true);h.hidden=true};
+    $("qbox").appendChild(h);
+  }
 }
 const mult=()=>G.combo>=10?3:G.combo>=5?2:1;
 
@@ -431,12 +462,18 @@ function finish(lost){
   const total=G.right+G.wrong,acc=total?Math.round(G.right/total*100):0;
   let stars=0,title,sub;
   if(G.mode==="level"){
-    if(lost){title="Kļūda ir labs skolotājs";sub="«Ошибка — хороший учитель». Сердца кончились, попробуйте ещё раз — ошибки сохранены.";}
-    else{stars=acc>=95?3:acc>=80?2:1;title=["","Labi!","Ļoti labi!","Lieliski!"][stars];
-      sub="Уровень «"+LEVELS[G.level].n+"» пройден.";G.xp+=stars*5;
-      if((S.stars[G.level]||0)<stars)S.stars[G.level]=stars;
-      if(G.level+1<LEVELS.length&&!(S.stars[G.level+1]))sub+=" Открыт уровень «"+LEVELS[G.level+1].n+"»!";
-      award("first");if(G.wrong===0)award("perfect")}
+    const L=LEVELS[G.level];
+    if(lost){title="Kļūda ir labs skolotājs";sub="«Ошибка — хороший учитель». Попробуйте ещё раз — слова те же.";}
+    else{stars=acc>=95?3:acc>=80?2:1;title=["","Labi!","Ļoti labi!","Lieliski!"][stars];G.xp+=stars*5;
+      award("first");if(G.wrong===0)award("perfect");
+      if(G.batch){
+        S.learned[G.level]=Math.min(L.w.length,(S.learned[G.level]||0)+G.batch.length);
+        const ln=S.learned[G.level];
+        sub="Вы выучили "+G.batch.length+" "+plural(G.batch.length,"новое слово","новых слова","новых слов")+": "+G.batch.map(w=>w[0]).join(", ")+".";
+        if(ln>=L.w.length){if((S.stars[G.level]||0)<stars)S.stars[G.level]=stars;
+          sub+=" Тема «"+L.n+"» выучена!"+(G.level+1<LEVELS.length?" Открыта тема «"+LEVELS[G.level+1].n+"».":"")}
+        else sub+=" В теме осталось "+(L.w.length-ln)+". Нажмите на кружок ещё раз.";
+      }else{if((S.stars[G.level]||0)<stars)S.stars[G.level]=stars;sub="Повторение темы «"+L.n+"» пройдено."}}
   }else if(G.mode==="blitz"){title=G.right+" за 60 секунд";
     sub=G.right>S.blitzBest?"Новый рекорд! Было "+S.blitzBest+".":"Рекорд: "+S.blitzBest+". Попробуйте побить!";
     S.blitzBest=Math.max(S.blitzBest,G.right);stars=G.right>=20?3:G.right>=12?2:G.right>=5?1:0;if(G.right>=15)award("blitz15")}
