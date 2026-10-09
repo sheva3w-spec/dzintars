@@ -376,8 +376,9 @@ function renderQ(){
     const nLearn=G.qs.filter(x=>x.type==="learn").length;
     kind.textContent="Новое слово "+(G.k+1)+" из "+nLearn;pr.textContent=q.w[0];sub.textContent="Читается: ["+q.w[1]+"]";
     const ru=document.createElement("div");ru.className="prompt";ru.style.color="var(--amber)";ru.style.fontSize="1.6rem";ru.textContent="= "+q.w[2];
-    box.appendChild(ru);addSay(q.w[0]);speak(q.w[0]);
+    box.appendChild(ru);
     renderMic(q,box);
+    listenBtn(q.w[0],box);
     go.textContent="Дальше →";G.checked=true;$("combo").textContent="";
   }else if(q.type==="lv2ru"){
     kind.textContent="Что это значит?";pr.textContent=q.w[0];sub.textContent="["+q.w[1]+"]";addSay(q.w[0]);
@@ -450,8 +451,16 @@ async function recordPcm(ms,onTick){
   const rec=new MediaRecorder(micStream),chunks=[];
   rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
   const done=new Promise(r=>rec.onstop=r);
-  rec.start();
-  for(let s=Math.ceil(ms/1000);s>0;s--){onTick(s);await new Promise(r=>setTimeout(r,1000))}
+  // останавливаемся, как только человек замолчал (или через ms)
+  const ac0=new (window.AudioContext||window.webkitAudioContext)(),an=ac0.createAnalyser();an.fftSize=1024;
+  ac0.createMediaStreamSource(micStream).connect(an);const buf0=new Float32Array(an.fftSize);
+  rec.start();onTick();
+  const t0=Date.now();let spoke=0,quietSince=0;
+  await new Promise(res=>{const iv=setInterval(()=>{
+    an.getFloatTimeDomainData(buf0);let s=0;for(const v of buf0)s+=v*v;const rms=Math.sqrt(s/buf0.length),now=Date.now();
+    if(rms>0.03){spoke=spoke||now;quietSince=0}else if(spoke&&!quietSince)quietSince=now;
+    if(now-t0>ms||(spoke&&quietSince&&now-quietSince>500)||(!spoke&&now-t0>2500)){clearInterval(iv);res()}},60)});
+  ac0.close&&ac0.close();
   rec.stop();await done;
   const ab=await new Blob(chunks,{type:rec.mimeType}).arrayBuffer();
   const ac=new (window.AudioContext||window.webkitAudioContext)();
@@ -474,13 +483,72 @@ async function listen(target,btn){
   }
   btn.dataset.loading="1";btn.textContent="⏳ Загружаю распознавание… "+asrPct+"%";
   const asr=await loadWhisper();delete btn.dataset.loading;
-  const pcm=await recordPcm(3000,s=>btn.textContent="🔴 Говорите… "+s);
+  const pcm=await recordPcm(3000,()=>btn.textContent="🔴 Говорите…");
   btn.textContent="🤔 Проверяю…";
   const out=await asr(pcm,{language:"latvian",task:"transcribe"});
   return (out&&out.text||"").trim();
 }
+/* ============ ГОЛОС НОСИТЕЛЯ ============
+   Записи латышей из Wikimedia Commons (Lingua Libre и др., CC BY-SA).
+   Нет записи — синтез голоса (помечаем «голос компьютера»). */
+const COMMONS="https://commons.wikimedia.org/w/api.php";
+let LL=null;const audioCache={};
+async function loadLL(){
+  if(LL)return LL;
+  try{LL=JSON.parse(localStorage.getItem("dz-ll")||"null")}catch(e){}
+  if(LL)return LL;
+  const map={};
+  for(const cat of ["Category:Lingua Libre pronunciation-lav","Category:Lingua Libre pronunciation-lvs"]){
+    let cont="";
+    for(let i=0;i<40;i++){
+      const r=await (await fetch(COMMONS+"?action=query&list=categorymembers&cmtype=file&cmlimit=500&format=json&origin=*&cmtitle="+encodeURIComponent(cat)+(cont?"&cmcontinue="+encodeURIComponent(cont):""))).json();
+      (r.query&&r.query.categorymembers||[]).forEach(x=>{const m=x.title.match(/^File:LL-Q9078 \((?:lvs|lav)\)-[^-]+-(.+)\.wav$/);if(m){const k=m[1].toLowerCase();(map[k]=map[k]||[]).push(x.title)}});
+      cont=r.continue&&r.continue.cmcontinue;if(!cont)break;
+    }
+  }
+  LL=map;try{localStorage.setItem("dz-ll",JSON.stringify(map))}catch(e){}
+  return LL;
+}
+// URL записи одного слова или null
+function wordAudio(k){
+  if(k in audioCache)return audioCache[k];
+  return audioCache[k]=(async()=>{
+    try{
+      const map=await loadLL(),kl=k.toLowerCase();
+      const cands=[...(map[kl]||[]),...[k,kl].flatMap(x=>["File:Lv-riga-"+x+".ogg","File:Lv-"+x+".ogg"])];
+      const r=await (await fetch(COMMONS+"?action=query&prop=imageinfo&iiprop=url&format=json&origin=*&titles="+encodeURIComponent(cands.slice(0,40).join("|")))).json();
+      const byTitle={};Object.values(r.query&&r.query.pages||{}).forEach(p=>{if(p.imageinfo)byTitle[p.title]=p.imageinfo[0].url});
+      (r.query&&r.query.normalized||[]).forEach(n=>{if(byTitle[n.to])byTitle[n.from]=byTitle[n.to]});
+      for(const c of cands){let u=byTitle[c];if(!u)continue;
+        if(/\.ogg$/i.test(u))u=u.replace("/wikipedia/commons/","/wikipedia/commons/transcoded/")+"/"+u.split("/").pop()+".mp3"; // iPhone не играет ogg
+        return u}
+    }catch(e){}
+    return null;
+  })();
+}
+// Для фразы: запись целиком, иначе — записи каждого слова подряд
+async function nativeAudio(word){
+  const k=word.replace(/[!?.,…]/g,"").trim();
+  const whole=await wordAudio(k);if(whole)return [whole];
+  const parts=k.split(/\s+/);if(parts.length<2)return null;
+  const urls=await Promise.all(parts.map(wordAudio));
+  return urls.every(Boolean)?urls:null;
+}
+function listenBtn(word,box){
+  const b=document.createElement("button");b.type="button";b.className="big b-dark";b.textContent="🔊 Загружаю запись…";b.disabled=true;
+  let audios=null;
+  nativeAudio(word).then(urls=>{
+    if(!urls){b.textContent="🔇 Записи носителя для этого пока нет";return}
+    audios=urls.map(u=>{const a=new Audio(u);a.preload="auto";return a});
+    b.disabled=false;b.textContent="🔊 Как говорит носитель"});
+  b.onclick=async()=>{if(!audios)return;
+    try{for(const a of audios){a.currentTime=0;await a.play();await new Promise(r=>{a.onended=r;setTimeout(r,4000)})}}
+    catch(e){toast("Не удалось включить звук. Проверьте громкость и интернет")}};
+  box.appendChild(b);
+}
+
 function renderMic(q,box){
-  if(IS_IOS)loadWhisper().catch(()=>{}); // начинаем загрузку заранее
+  if(IS_IOS||!SR)loadWhisper().catch(()=>{});
   const mic=document.createElement("button");mic.type="button";mic.id="micBtn";mic.className="big b-amber";mic.textContent="🎤 Скажите слово";
   const res=document.createElement("div");res.className="fb";res.hidden=true;res.style.padding="12px 14px";res.style.borderRadius="14px";
   mic.onclick=async()=>{
@@ -637,6 +705,8 @@ $("rNext").onclick=()=>{show("home");renderHome()};
 $("blitzBtn").onclick=startBlitz;$("fixBtn").onclick=startFix;
 
 renderHome();
+// заранее, в фоне: распознавание речи и список записей носителей — чтобы в уроке не ждать
+if(navigator.onLine!==false)setTimeout(()=>{if(IS_IOS||!SR)loadWhisper().catch(()=>{});loadLL().catch(()=>{})},1500);
 if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 </script>
 </body>
