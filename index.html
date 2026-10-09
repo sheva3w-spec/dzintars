@@ -377,8 +377,8 @@ function renderQ(){
     kind.textContent="Новое слово "+(G.k+1)+" из "+nLearn;pr.textContent=q.w[0];sub.textContent="Читается: ["+q.w[1]+"]";
     const ru=document.createElement("div");ru.className="prompt";ru.style.color="var(--amber)";ru.style.fontSize="1.6rem";ru.textContent="= "+q.w[2];
     box.appendChild(ru);
-    renderMic(q,box);
     listenBtn(q.w[0],box);
+    renderMic(q,box);
     go.textContent="Дальше →";G.checked=true;$("combo").textContent="";
   }else if(q.type==="lv2ru"){
     kind.textContent="Что это значит?";pr.textContent=q.w[0];sub.textContent="["+q.w[1]+"]";addSay(q.w[0]);
@@ -526,21 +526,31 @@ function wordAudio(k){
     return null;
   })();
 }
-// Для фразы: запись целиком, иначе — записи каждого слова подряд
+// Озвучка нейроголосом (Piper, латышский голос) для слов без записи носителя — файлы в audio/
+let localIdx=null;
+function localAudio(word){
+  localIdx=localIdx||fetch("audio/index.json").then(r=>r.json()).catch(()=>({}));
+  return localIdx.then(m=>{
+    for(let li=0;li<LEVELS.length;li++){const wi=LEVELS[li].w.findIndex(w=>w[0]===word);
+      if(wi>=0&&m["L"+li+"_"+wi])return "audio/"+m["L"+li+"_"+wi]}
+    return null});
+}
+// {urls, native}: запись носителя целиком; иначе фраза из записей слов; иначе нейроголос
 async function nativeAudio(word){
   const k=word.replace(/[!?.,…]/g,"").trim();
-  const whole=await wordAudio(k);if(whole)return [whole];
-  const parts=k.split(/\s+/);if(parts.length<2)return null;
-  const urls=await Promise.all(parts.map(wordAudio));
-  return urls.every(Boolean)?urls:null;
+  const whole=await wordAudio(k);if(whole)return {urls:[whole],native:true};
+  const parts=k.split(/\s+/);
+  if(parts.length>1){const urls=await Promise.all(parts.map(wordAudio));if(urls.every(Boolean))return {urls,native:true}}
+  const loc=await localAudio(word);
+  return loc?{urls:[loc],native:false}:null;
 }
 function listenBtn(word,box){
   const b=document.createElement("button");b.type="button";b.className="big b-dark";b.textContent="🔊 Загружаю запись…";b.disabled=true;
   let audios=null;
-  nativeAudio(word).then(urls=>{
-    if(!urls){b.textContent="🔇 Записи носителя для этого пока нет";return}
-    audios=urls.map(u=>{const a=new Audio(u);a.preload="auto";return a});
-    b.disabled=false;b.textContent="🔊 Как говорит носитель"});
+  nativeAudio(word).then(a=>{
+    if(!a){b.textContent="🔇 Записи для этого пока нет";return}
+    audios=a.urls.map(u=>{const x=new Audio(u);x.preload="auto";return x});
+    b.disabled=false;b.textContent=a.native?"🔊 Как говорит носитель":"🔊 Послушать (нейроголос)"});
   b.onclick=async()=>{if(!audios)return;
     try{for(const a of audios){a.currentTime=0;await a.play();await new Promise(r=>{a.onended=r;setTimeout(r,4000)})}}
     catch(e){toast("Не удалось включить звук. Проверьте громкость и интернет")}};
