@@ -141,6 +141,17 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 .info .ex{display:flex;flex-direction:column;gap:6px}
 .info .ex div b{color:var(--amber2)}
 .info textarea{width:100%;min-height:140px;background:var(--sea2);color:var(--text);border:2px solid var(--line);border-radius:12px;padding:12px;font:inherit;user-select:text}
+.dict{display:flex;flex-direction:column}
+.drow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.drow .dw{flex:1;min-width:0}
+.drow .dw b{display:block;font-size:1.05rem;color:var(--amber2);overflow-wrap:anywhere}
+.drow .dw span{display:block;font-size:.92rem}
+.drow .dw small{color:var(--muted);font-size:.8rem}
+.drow .lvl{flex:none;font-size:.7rem;letter-spacing:1px;color:var(--amber)}
+.drow .say{flex:none;padding:8px 10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{padding:10px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-weight:700;font-size:.9rem}
+.seg button.on{border-color:var(--amber);color:var(--amber2)}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--amber);color:#2a1606;font-weight:800;padding:10px 16px;border-radius:999px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:90vw;text-align:center}
 </style>
 </head>
@@ -166,6 +177,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
   </div>
 
   <button class="big b-amber" id="revBtn" type="button">🔁 Повторить сегодня (<span id="dueN">0</span>)</button>
+  <button class="big b-dark" id="dictBtn" type="button">📚 Мой словарь (<span id="dictN">0</span>)</button>
 
   <div class="plan">
     <div class="row"><h3 id="weekTitle">Неделя 1</h3><span class="small" id="planPct">0 из 6</span></div>
@@ -330,7 +342,7 @@ function renderHome(){
   $("dayGoalTxt").textContent=Math.min(S.dayXp,DAY_GOAL)+" / "+DAY_GOAL+" янтаря";
   $("dayGoal").style.width=Math.min(100,S.dayXp/DAY_GOAL*100)+"%";
   $("errN").textContent=S.errors.length;
-  $("dueN").textContent=dueWords().length;renderToday();
+  $("dueN").textContent=dueWords().length;$("dictN").textContent=learnedWords().length;renderToday();
   const m=$("map");m.textContent="";
   LEVELS.forEach((L,i)=>{
     const st=S.stars[i]||0,open=i===0||levelDone(i-1),ln=Math.min(S.learned[i]||0,L.w.length);
@@ -379,10 +391,26 @@ function startLevel(i){
   let qs,batch=null;
   if(n<L.w.length){
     batch=L.w.slice(n,n+BATCH);
-    qs=[...batch.map(w=>({type:"learn",w})),...easyQs(batch,i)];
+    qs=[...warmQs(),...batch.map(w=>({type:"learn",w})),...easyQs(batch,i)];
   }else qs=makeQs(i,10); // повторение уровня целиком: тут уже письмо и фразы
   G={mode:"level",level:i,batch,qs,k:0,hearts:5,right:0,wrong:0,combo:0,best:0,xp:0,sel:null};
   show("lesson");renderQ();
+  if(qs[0]&&qs[0].warm)toast("Сначала разминка: "+qs.filter(q=>q.warm).length+" старых слов вразброс");
+}
+// Разминка перед новым уроком: случайные уже выученные слова из всех тем, вразнобой.
+// Слабые слова (низкая коробка повторения) попадаются чаще.
+const WARM_N=6;
+function warmQs(){
+  const pool=learnedWords();if(pool.length<4)return [];
+  const wt=w=>{const s=S.srs[w[0]];return s?7-s.b:6};
+  const left=pool.slice(),chosen=[];
+  while(chosen.length<Math.min(WARM_N,pool.length)){
+    let r=Math.random()*left.reduce((a,w)=>a+wt(w),0),j=0;
+    while(j<left.length-1&&(r-=wt(left[j]))>0)j++;
+    chosen.push(left.splice(j,1)[0]);
+  }
+  return chosen.map(w=>{const r=Math.random(),type=r<.35?"lv2ru":r<.7?"ru2lv":"type";
+    return {type,w,warm:true,opts:shuffle([w,...pick(pool.filter(x=>x!==w),3)])}});
 }
 function startFix(){
   if(!S.errors.length){toast("Ошибок нет — отлично!");return}
@@ -403,7 +431,7 @@ function startBlitz(){
 function renderQ(){
   const q=G.qs[G.k],box=$("qbox");box.textContent="";G.sel=null;G.checked=false;
   $("prog").style.width=(G.mode==="blitz"?Math.min(100,G.right*5):G.k/G.qs.length*100)+"%";
-  if(G.mode!=="blitz")$("hearts").textContent=G.mode==="fix"?"🩹":G.mode==="say"?"🎤":G.mode==="review"?"🔁":G.mode==="check"?"📝":"❤️ "+G.hearts;
+  if(G.mode!=="blitz")$("hearts").textContent=G.mode==="fix"?"🩹":G.mode==="say"?"🎤":G.mode==="review"?"🔁":G.mode==="quiz"?"🎲":G.mode==="check"?"📝":"❤️ "+G.hearts;
   $("combo").textContent=G.combo>=3?"🔥 Серия "+G.combo+" · ×"+mult():"";
   $("fb").hidden=true;$("sheet").className="sheet";
   const go=$("go");go.textContent="Проверить";go.disabled=false;go.style.opacity="";
@@ -415,8 +443,8 @@ function renderQ(){
   if(q.type==="say"){renderSay(q,box,kind,pr,sub)}
   else if(q.type==="mc"){kind.textContent="Проверка недели · грамматика";pr.textContent=q.q;pr.style.fontSize="1.35rem";options(q.opts,q.opts[q.a])}
   else if(q.type==="learn"){
-    const nLearn=G.qs.filter(x=>x.type==="learn").length;
-    kind.textContent="Новое слово "+(G.k+1)+" из "+nLearn;pr.textContent=q.w[0];sub.textContent="Читается: ["+q.w[1]+"]";
+    const ls=G.qs.filter(x=>x.type==="learn");
+    kind.textContent="Новое слово "+(ls.indexOf(q)+1)+" из "+ls.length;pr.textContent=q.w[0];sub.textContent="Читается: ["+q.w[1]+"]";
     const ru=document.createElement("div");ru.className="prompt";ru.style.color="var(--amber)";ru.style.fontSize="1.6rem";ru.textContent="= "+q.w[2];
     box.appendChild(ru);
     listenBtn(q.w[0],box);
@@ -436,7 +464,9 @@ function renderQ(){
     const keys=document.createElement("div");keys.className="keys";
     DIAC.forEach(c=>{const b=document.createElement("button");b.type="button";b.textContent=c;b.onclick=()=>{const s=inp.selectionStart??inp.value.length;inp.value=inp.value.slice(0,s)+c+inp.value.slice(inp.selectionEnd??s);inp.focus();inp.setSelectionRange(s+1,s+1)};keys.appendChild(b)});
     box.append(inp,keys);
-  }else if(q.type==="build"){
+  }
+  if(q.warm)kind.textContent="🔁 Разминка · "+kind.textContent;
+  if(q.type==="build"){
     kind.textContent="Соберите фразу";pr.textContent=q.ru;pr.style.fontSize="1.5rem";
     const target=q.lv.replace(/[!?.,]/g,"").split(" ");
     const extra=pick(LEVELS.flatMap(l=>l.w).map(w=>w[0].replace(/[!?.,…]/g,"").split(" ")[0]).filter(x=>x&&!target.includes(x)),2);
@@ -694,15 +724,21 @@ function check(){
     ok=G.built.join(" ")===q.lv.replace(/[!?.,]/g,"");correct=q.lv}
   G.checked=true;
   if(ok){G.right++;G.combo++;G.best=Math.max(G.best,G.combo);const gain=(G.mode==="blitz"?2:5)*mult();G.xp+=gain;sfx.ok();
-    if(G.mode==="review"&&q.w&&!q.again)srsGrade(q.w,true);
+    if((G.mode==="review"||q.warm||G.mode==="quiz")&&q.w&&!q.again)srsGrade(q.w,true);
     if(q.w)S.errors=S.errors.filter(e=>e[0]!==q.w[0]);
     if(G.combo===5||G.combo===10)toast(G.combo===5?"Серия 5! Янтарь ×2":"Серия 10! Янтарь ×3");
   }else{G.wrong++;G.combo=0;sfx.no();$("qbox").classList.add("shake");setTimeout(()=>$("qbox").classList.remove("shake"),400);
-    if(G.mode==="level")G.hearts--;
+    if(!q.again)G.miss=(G.miss||0)+1;
     if(q.w&&!S.errors.some(e=>e[0]===q.w[0]))S.errors.push(q.w);
-    if(G.mode==="review"&&q.w&&!q.again)srsGrade(q.w,false);
-    if(G.mode==="level"||G.mode==="fix")G.qs.push(q); // ошибка вернётся в конце урока
-    if(G.mode==="review"&&!q.again)G.qs.push(Object.assign({},q,{again:true}));
+    if((G.mode==="review"||q.warm||G.mode==="quiz")&&q.w&&!q.again)srsGrade(q.w,false);
+    if(q.warm){ // забытое старое слово — ещё раз в конце разминки, без потери жизни
+      if(!q.again){let at=G.qs.findIndex((x,j)=>j>G.k&&!x.warm);if(at<0)at=G.qs.length;
+        G.qs.splice(at,0,Object.assign({},q,{again:true,opts:shuffle(q.opts)}))}}
+    else{
+      if(G.mode==="level")G.hearts--;
+      if(G.mode==="level"||G.mode==="fix")G.qs.push(q); // ошибка вернётся в конце урока
+      if((G.mode==="review"||G.mode==="quiz")&&!q.again)G.qs.push(Object.assign({},q,{again:true}));
+    }
   }
   if(q.w&&lvVoice&&G.mode!=="blitz")speak(q.w[0]);
   if(G.mode==="blitz"){setTimeout(next,ok?250:700);return}
@@ -829,6 +865,42 @@ function report(){
     "\nОшибки: "+(S.errors.map(e=>e[0]).slice(0,15).join(", ")||"нет")+"\n\nПо этому отчёту скажи, успеваю ли я к A2, и дай план на завтра.";
   copyText(t,"Отчёт скопирован — вставьте в чат учителя");
 }
+// Мой словарь: все выученные слова по темам или по алфавиту, поиск, озвучка, случайная проверка
+let dictSort="topic";
+function playWord(word,btn){btn.textContent="⏳";
+  nativeAudio(word).then(async a=>{btn.textContent="🔊";if(!a){toast("Записи для этого слова пока нет");return}
+    try{for(const u of a.urls){const x=new Audio(u);await x.play();await new Promise(r=>{x.onended=r;setTimeout(r,4000)})}}
+    catch(e){toast("Не удалось включить звук. Проверьте громкость и интернет")}})}
+function showDict(){
+  const groups=LEVELS.map((L,i)=>({n:L.i+" "+L.n,w:L.w.slice(0,levelDone(i)?L.w.length:(S.learned[i]||0))})).filter(g=>g.w.length);
+  const total=groups.reduce((a,g)=>a+g.w.length,0);
+  showInfo("📚 Мой словарь",b=>{
+    if(!total){b.append(el("p","Здесь появятся слова, которые вы выучили в уроках. Начните с первой темы.","small"));return}
+    b.append(el("p","Выучено: "+total+" "+plural(total,"слово","слова","слов")+". Полоска ●○ — насколько прочно слово запомнилось.","small"));
+    const qz=el("button","🎲 Проверить себя: 10 случайных слов","big b-amber");qz.type="button";qz.onclick=startQuiz;b.appendChild(qz);
+    const seg=el("div",null,"seg");
+    [["topic","По темам"],["az","По алфавиту"]].forEach(([k,t])=>{const s=el("button",t,dictSort===k?"on":"");s.type="button";s.onclick=()=>{dictSort=k;showDict()};seg.appendChild(s)});
+    const q=el("input",null,"inp");q.placeholder="Поиск: латышский или русский";q.autocomplete="off";q.autocapitalize="off";q.spellcheck=false;
+    const list=el("div",null,"dict");
+    const row=w=>{const r=el("div",null,"drow"),d=el("div",null,"dw");d.append(el("b",w[0]),el("span",w[2]),el("small","["+w[1]+"]"));
+      const s=S.srs[w[0]],bx=s?s.b:1,lv=el("div","●".repeat(bx)+"○".repeat(6-bx),"lvl");lv.title="Прочность: "+bx+" из 6";
+      const p=el("button","🔊","say");p.type="button";p.setAttribute("aria-label","Послушать "+w[0]);p.onclick=()=>playWord(w[0],p);
+      r.append(d,lv,p);return r};
+    const draw=()=>{list.textContent="";const f=strip(q.value);
+      const ok=w=>!f||strip(w[0]).includes(f)||w[2].toLowerCase().includes(q.value.trim().toLowerCase());
+      if(dictSort==="az"){groups.flatMap(g=>g.w).filter(ok).sort((a,c)=>a[0].localeCompare(c[0],"lv")).forEach(w=>list.appendChild(row(w)))}
+      else groups.forEach(g=>{const ws=g.w.filter(ok);if(!ws.length)return;const h=el("h3",g.n+" · "+ws.length);h.style.marginTop="14px";list.appendChild(h);ws.forEach(w=>list.appendChild(row(w)))});
+      if(!list.children.length)list.appendChild(el("p","Ничего не найдено","small"))};
+    q.oninput=draw;b.append(seg,q,list);draw();
+  });
+}
+function startQuiz(){
+  const pool=learnedWords();if(pool.length<4){toast("Сначала выучите хотя бы 4 слова");return}
+  const qs=pick(pool,Math.min(10,pool.length)).map(w=>{const r=Math.random(),type=r<.35?"lv2ru":r<.7?"ru2lv":"type";
+    return {type,w,opts:shuffle([w,...pick(pool.filter(x=>x!==w),3)])}});
+  G={mode:"quiz",qs,k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0};show("lesson");renderQ();
+}
+$("dictBtn").onclick=showDict;
 $("revBtn").onclick=startReview;$("checkBtn").onclick=startCheck;$("reportBtn").onclick=report;
 
 // Загрузка тем недель 3–12 и грамматики (один раз из интернета, потом из памяти телефона)
@@ -868,6 +940,9 @@ function finish(lost){
   else if(G.mode==="review"){const n=G.qs.filter(q=>!q.again).length;
     title="Повторено: "+n+" "+plural(n,"слово","слова","слов");stars=acc>=90?3:acc>=70?2:1;markDone("rev");
     const left=dueWords().length;sub=left?"Ещё к повторению: "+left+". Можно сделать ещё круг.":"На сегодня всё повторено. Слова вернутся, когда начнут забываться."}
+  else if(G.mode==="quiz"){const n=G.qs.filter(q=>!q.again).length;stars=acc>=90?3:acc>=70?2:1;
+    title="Словарь: "+(n-(G.miss||0))+" из "+n+" сразу";
+    sub=G.miss?"Забытые слова чаще попадутся в повторении и разминке.":"Все слова на месте — отлично!"}
   else if(G.mode==="check"){S.checks[G.week]=Math.max(S.checks[G.week]||0,acc);stars=acc>=90?3:acc>=70?2:1;
     title="Проверка недели "+G.week+": "+acc+"%";
     sub=acc>=70?"Вы идёте по плану к A2. Нажмите «Отчёт учителю» и отправьте результат.":"Ниже 70% — включаем страховку: 3 дня без новых слов, только «Повторить сегодня» и «Ошибки», потом проверку ещё раз."}
