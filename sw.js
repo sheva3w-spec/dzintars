@@ -1,8 +1,10 @@
 // Хранит приложение на телефоне: без интернета берёт из памяти,
 // с интернетом сначала проверяет новую версию.
-const CACHE = "dzintars-v5";
+const CACHE = "dzintars-v6";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png",
   "content/part1.json", "content/part2.json", "content/grammar.json", "audio/index.json"];
+// озвучка алфавита: 33 буквы + 33 слова-примера
+for (let i = 0; i < 33; i++) FILES.push("audio/ABCA_" + i + ".wav", "audio/ABCW_" + i + ".wav");
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

@@ -152,6 +152,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .seg button{padding:10px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-weight:700;font-size:.9rem}
 .seg button.on{border-color:var(--amber);color:var(--amber2)}
+.abc{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px}
+.abc button{padding:10px 0 6px;border-radius:12px;background:var(--panel);border:2px solid var(--line);font-family:var(--disp);font-size:1.35rem;font-weight:700;line-height:1.1}
+.abc button small{display:block;font-family:var(--ui);font-size:.7rem;color:var(--muted);font-weight:500}
+.abc button.on{border-color:var(--amber);color:var(--amber2)}
+.abcd{background:var(--panel);border:1px solid var(--amber);border-radius:14px;padding:12px;line-height:1.5}
+.abcd b{font-family:var(--disp);font-size:1.6rem;color:var(--amber2)}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--amber);color:#2a1606;font-weight:800;padding:10px 16px;border-radius:999px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:90vw;text-align:center}
 </style>
 </head>
@@ -177,7 +183,10 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
   </div>
 
   <button class="big b-amber" id="revBtn" type="button">🔁 Повторить сегодня (<span id="dueN">0</span>)</button>
-  <button class="big b-dark" id="dictBtn" type="button">📚 Мой словарь (<span id="dictN">0</span>)</button>
+  <div class="duo">
+    <button class="big b-dark" id="dictBtn" type="button">📚 Словарь (<span id="dictN">0</span>)</button>
+    <button class="big b-dark" id="abcBtn" type="button">🔤 Алфавит (<span id="abcN">0</span>/33)</button>
+  </div>
 
   <div class="plan">
     <div class="row"><h3 id="weekTitle">Неделя 1</h3><span class="small" id="planPct">0 из 6</span></div>
@@ -295,7 +304,7 @@ const DAY_GOAL=50;
 /* ============ STATE ============ */
 const today=(()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()})();
 const yesterday=(()=>{const d=new Date(Date.now()-864e5);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()})();
-let S={xp:0,stars:{},learned:{},srs:{},checks:{},streak:0,last:"",dayXp:0,day:"",errors:[],ach:[],blitzBest:0};
+let S={xp:0,abc:0,stars:{},learned:{},srs:{},checks:{},streak:0,last:"",dayXp:0,day:"",errors:[],ach:[],blitzBest:0};
 try{const s=JSON.parse(localStorage.getItem("dzintars")||"null");if(s)S=Object.assign(S,s)}catch(e){}
 if(S.day!==today){S.day=today;S.dayXp=0}
 const save=()=>{try{localStorage.setItem("dzintars",JSON.stringify(S))}catch(e){}};
@@ -342,7 +351,7 @@ function renderHome(){
   $("dayGoalTxt").textContent=Math.min(S.dayXp,DAY_GOAL)+" / "+DAY_GOAL+" янтаря";
   $("dayGoal").style.width=Math.min(100,S.dayXp/DAY_GOAL*100)+"%";
   $("errN").textContent=S.errors.length;
-  $("dueN").textContent=dueWords().length;$("dictN").textContent=learnedWords().length;renderToday();
+  $("dueN").textContent=dueWords().length;$("dictN").textContent=learnedWords().length;$("abcN").textContent=S.abc;renderToday();
   const m=$("map");m.textContent="";
   LEVELS.forEach((L,i)=>{
     const st=S.stars[i]||0,open=i===0||levelDone(i-1),ln=Math.min(S.learned[i]||0,L.w.length);
@@ -431,7 +440,7 @@ function startBlitz(){
 function renderQ(){
   const q=G.qs[G.k],box=$("qbox");box.textContent="";G.sel=null;G.checked=false;
   $("prog").style.width=(G.mode==="blitz"?Math.min(100,G.right*5):G.k/G.qs.length*100)+"%";
-  if(G.mode!=="blitz")$("hearts").textContent=G.mode==="fix"?"🩹":G.mode==="say"?"🎤":G.mode==="review"?"🔁":G.mode==="quiz"?"🎲":G.mode==="check"?"📝":"❤️ "+G.hearts;
+  if(G.mode!=="blitz")$("hearts").textContent=G.mode==="fix"?"🩹":G.mode==="say"?"🎤":G.mode==="review"?"🔁":G.mode==="quiz"?"🎲":G.mode==="check"?"📝":G.mode==="abc"?"🔤":G.mode==="listen"?"🎧":"❤️ "+G.hearts;
   $("combo").textContent=G.combo>=3?"🔥 Серия "+G.combo+" · ×"+mult():"";
   $("fb").hidden=true;$("sheet").className="sheet";
   const go=$("go");go.textContent="Проверить";go.disabled=false;go.style.opacity="";
@@ -441,6 +450,18 @@ function renderQ(){
   box.append(kind,pr,sub);
   const addSay=t=>{if(!lvVoice)return;const b=document.createElement("button");b.type="button";b.className="say";b.textContent="🔊 Послушать";b.onclick=()=>speak(t);box.appendChild(b)};
   if(q.type==="say"){renderSay(q,box,kind,pr,sub)}
+  else if(q.type==="abcLearn"){const a=q.a,ls=G.qs.filter(x=>x.type==="abcLearn");
+    kind.textContent="Новая буква "+(ls.indexOf(q)+1)+" из "+ls.length;pr.textContent=a[0]+" "+a[0].toLowerCase();pr.style.fontSize="3rem";
+    sub.textContent="Называется «"+a[1]+"» · звук: "+a[2];
+    const ex=document.createElement("div");ex.className="abcd";ex.textContent="Пример: "+a[3]+" ["+a[4]+"] — "+a[5];box.appendChild(ex);
+    abcPlayBtn(q.i,box,true);
+    go.textContent="Дальше →";G.checked=true;$("combo").textContent="";
+  }else if(q.type==="abcHear"){kind.textContent="Какую букву вы слышите?";pr.textContent="🎧";
+    abcPlayBtn(q.i,box,true,true);options(q.opts,q.right)}
+  else if(q.type==="abcRu"){kind.textContent="Как читается эта буква?";pr.textContent=q.a[0]+" "+q.a[0].toLowerCase();pr.style.fontSize="3rem";options(q.opts,q.right)}
+  else if(q.type==="abcWord"){kind.textContent="Прочитайте слово — как оно звучит?";pr.textContent=q.a[3];sub.textContent="= "+q.a[5];options(q.opts,q.right)}
+  else if(q.type==="hear"){kind.textContent="Послушайте и выберите перевод";pr.textContent="🎧";
+    hearBtn(q.w[0],box);options(q.opts.map(o=>o[2]),q.w[2])}
   else if(q.type==="mc"){kind.textContent="Проверка недели · грамматика";pr.textContent=q.q;pr.style.fontSize="1.35rem";options(q.opts,q.opts[q.a])}
   else if(q.type==="learn"){
     const ls=G.qs.filter(x=>x.type==="learn");
@@ -716,7 +737,7 @@ function checkSay(q){
 function check(){
   const q=G.qs[G.k];let ok=false,almost=false,correct="";
   if(q.type==="say")return checkSay(q);
-  if(q.type==="lv2ru"||q.type==="ru2lv"||q.type==="mc"){if(G.sel==null){toast("Выберите ответ");return}ok=G.sel===G.right_;correct=G.right_;
+  if(["lv2ru","ru2lv","mc","hear","abcHear","abcRu","abcWord"].includes(q.type)){if(G.sel==null){toast("Выберите ответ");return}ok=G.sel===G.right_;correct=G.right_;
     [...document.querySelectorAll(".opt")].forEach(b=>{if(b.textContent===G.right_)b.classList.add("right");else if(b.textContent===G.sel)b.classList.add("wrong")})}
   else if(q.type==="type"){const v=$("ans").value;if(!v.trim()){toast("Напишите ответ");return}
     const want=q.w[0].replace("…","");ok=norm(v)===norm(want);if(!ok&&strip(v)===strip(want)){ok=true;almost=true}correct=q.w[0]}
@@ -737,7 +758,7 @@ function check(){
     else{
       if(G.mode==="level")G.hearts--;
       if(G.mode==="level"||G.mode==="fix")G.qs.push(q); // ошибка вернётся в конце урока
-      if((G.mode==="review"||G.mode==="quiz")&&!q.again)G.qs.push(Object.assign({},q,{again:true}));
+      if(["review","quiz","abc","listen"].includes(G.mode)&&!q.again)G.qs.push(Object.assign({},q,{again:true}));
     }
   }
   if(q.w&&lvVoice&&G.mode!=="blitz")speak(q.w[0]);
@@ -753,7 +774,7 @@ function next(){G.k++;
   if(G.mode==="blitz"&&G.k>=G.qs.length)G.k=0;
   renderQ()}
 $("go").onclick=()=>G.checked?next():check();
-$("quit").onclick=()=>{clearInterval(timer);try{speechSynthesis.cancel()}catch(e){}show("home");renderHome()};
+$("quit").onclick=()=>{clearInterval(timer);try{speechSynthesis.cancel()}catch(e){}if(G&&G.from==="say1"){showTalk();return}show("home");renderHome()};
 
 /* ============ ПРОГРАММА: недели, план дня, повторение, грамматика, проверка, отчёт ============ */
 const START_W1=new Date(2026,9,12),TEACHER_URL="https://claude.ai/project/01a12130-16d3-776d-9b84-be6612073489";
@@ -770,7 +791,11 @@ function srsGrade(w,ok){const s=S.srs[w[0]]||(S.srs[w[0]]={b:1,d:TODAY_I});
 function dueWords(){const all=learnedWords();all.forEach(w=>{if(!S.srs[w[0]])S.srs[w[0]]={b:1,d:TODAY_I}});
   return all.filter(w=>S.srs[w[0]].d<=TODAY_I)}
 function startReview(){
-  const due=dueWords();if(!due.length){toast("На сегодня всё повторено ✓");markDone("rev");renderHome();return}
+  const due=dueWords();
+  if(!due.length){ // срочных слов нет — всё равно настоящее занятие, а не просто галочка
+    if(learnedWords().length>=4){toast("Срочных слов нет — проверка 10 случайных");startQuiz();G.from="rev";return}
+    if(S.abc>=6){toast("Слов ещё нет — повторяем выученные буквы");startAbc(true);G.from="rev";return}
+    toast("Повторять пока нечего — начинаем с алфавита");startAbc();G.from="rev";return}
   const pool=learnedWords().length>=4?learnedWords():LEVELS[0].w;
   const qs=shuffle(due).slice(0,30).map((w,i)=>({type:i%2?"ru2lv":"lv2ru",w,opts:shuffle([w,...pick(pool.filter(x=>x!==w),3)])}));
   G={mode:"review",qs,k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0};show("lesson");renderQ();
@@ -781,33 +806,134 @@ const BLOCKS=[
   {id:"rev",i:"🔁",t:"Повторение",m:20,s:"слова, которые пора повторить"},
   {id:"new",i:"🆕",t:"Новые слова",m:20,s:"2 урока в темах"},
   {id:"gram",i:"📖",t:"Грамматика",m:15,s:"карточка недели"},
-  {id:"listen",i:"🎧",t:"Аудирование",m:20,s:"e-Laipa или латышское радио"},
-  {id:"talk",i:"🗣",t:"Разговор",m:30,s:"голосом с учителем (〰️)"},
+  {id:"listen",i:"🎧",t:"Аудирование",m:20,s:"8 слов на слух → выбрать перевод"},
+  {id:"talk",i:"🗣",t:"Разговор",m:30,s:"произнести 6 слов → беседа с учителем"},
   {id:"write",i:"✍️",t:"Письмо",m:15,s:"3 предложения → учителю"}];
+const ABC_BLOCK={id:"abc",i:"🔤",t:"Алфавит",m:10,s:"6 новых букв со звуком"};
+// Пока алфавит не выучен — он первый пункт плана
+function planBlocks(){return S.abc<ABC.length?[ABC_BLOCK,...BLOCKS]:BLOCKS}
 function dayState(){if(!S.day2||S.day2.d!==today)S.day2={d:today,done:{},lessons:0};return S.day2}
 function markDone(id){dayState().done[id]=true;save()}
 function nextLevel(){for(let i=0;i<LEVELS.length;i++){if(!levelDone(i)&&(i===0||levelDone(i-1)))return i}return 0}
+// «Начать» запускает само задание; галочка ставится, когда задание пройдено до конца
+function startBlock(id){
+  ({abc:()=>startAbc(),rev:startReview,new:()=>startLevel(nextLevel()),gram:showGrammar,listen:startListen,talk:showTalk,write:showWriting})[id]();
+  if(!$("lesson").hidden&&G&&!G.from&&id!=="new")G.from=id;
+}
 function renderToday(){
   const st=dayState(),list=$("todayList");list.textContent="";
   $("weekTitle").textContent="Сегодня · неделя "+weekNo();
-  let n=0;
-  BLOCKS.forEach(b=>{
+  let n=0;const blocks=planBlocks();
+  blocks.forEach(b=>{
     const done=!!st.done[b.id];if(done)n++;
     const r=document.createElement("div");r.className="trow"+(done?" done":"");
     const t=document.createElement("button");t.type="button";t.className="tick";t.textContent="✓";t.setAttribute("aria-label",(done?"Снять отметку: ":"Отметить: ")+b.t);
     t.onclick=()=>{st.done[b.id]=!st.done[b.id];save();renderToday()};
     const tt=document.createElement("div");tt.className="tt";tt.innerHTML="<b></b><small></small>";
     tt.querySelector("b").textContent=b.i+" "+b.t+" · "+b.m+" мин";
-    tt.querySelector("small").textContent=b.id==="new"?"уроков сегодня: "+st.lessons+" из 2":b.s;
-    let go;
-    if(b.id==="listen"||b.id==="talk"){go=document.createElement("a");go.href=b.id==="listen"?"https://elaipa.lv/":TEACHER_URL;go.target="_blank";go.rel="noopener";
-      go.onclick=()=>{st.done[b.id]=true;save();setTimeout(renderToday,300)}}
-    else{go=document.createElement("button");go.type="button";
-      go.onclick={rev:startReview,new:()=>startLevel(nextLevel()),gram:showGrammar,write:showWriting}[b.id]}
-    go.className="go";go.textContent="Начать";
+    tt.querySelector("small").textContent=b.id==="new"?"уроков сегодня: "+st.lessons+" из 2 · тема «"+(LEVELS[nextLevel()]||LEVELS[0]).n+"»":
+      b.id==="abc"?"выучено "+S.abc+" из "+ABC.length+" · сегодня: "+ABC.slice(S.abc,S.abc+ABC_N).map(a=>a[0]).join(" "):b.s;
+    const go=document.createElement("button");go.type="button";go.onclick=()=>startBlock(b.id);
+    go.className="go";go.textContent=done?"Ещё":"Начать";
     r.append(t,tt,go);list.appendChild(r);
   });
-  $("planPct").textContent=n+" из 6";
+  $("planPct").textContent=n+" из "+blocks.length;
+}
+
+/* ============ АЛФАВИТ: 33 буквы, звук по-русски, слово-пример, озвучка Piper (audio/ABCA_i, ABCW_i) ============ */
+const ABC=[
+ ["A","a","«а»","alus","алус","пиво"],["Ā","ā","долгое «аа»","māja","маайа","дом"],["B","bē","«б»","brālis","браалис","брат"],
+ ["C","cē","«ц»","cena","цэна","цена"],["Č","čē","«ч»","četri","чэтри","четыре"],["D","dē","«д»","diena","диена","день"],
+ ["E","e","«э»","es","эс","я"],["Ē","ē","долгое «ээ»","ēst","ээст","есть (кушать)"],["F","ef","«ф»","fabrika","фабрика","фабрика"],
+ ["G","gā","«г»","galds","галдс","стол"],["Ģ","ģē","мягкое «гь», почти «дь»","ģimene","дьимэнэ","семья"],["H","hā","«х»","hokejs","хокейс","хоккей"],
+ ["I","i","«и»","iela","иела","улица"],["Ī","ī","долгое «ии»","rīts","риитс","утро"],["J","jē","«й»","jā","яа","да"],
+ ["K","kā","«к»","kafija","кафия","кофе"],["Ķ","ķē","мягкое «кь», почти «ть»","ķirsis","кьирсис","вишня"],["L","el","«л»","labi","лаби","хорошо"],
+ ["Ļ","eļ","мягкое «ль»","ļoti","льуоти","очень"],["M","em","«м»","māte","маатэ","мать"],["N","en","«н»","nauda","науда","деньги"],
+ ["Ņ","eņ","мягкое «нь»","ņemt","ньэмт","брать"],["O","o","«уо» (в новых словах «о»)","logs","луогс","окно"],["P","pē","«п»","piens","пиенс","молоко"],
+ ["R","er","«р»","Rīga","риига","Рига"],["S","es","«с»","siers","сиерс","сыр"],["Š","eš","«ш»","šodien","шуодиен","сегодня"],
+ ["T","tē","«т»","tēvs","тээвс","отец"],["U","u","«у»","upe","упэ","река"],["Ū","ū","долгое «уу»","ūdens","уудэнс","вода"],
+ ["V","vē","«в»","vīrs","виирс","муж"],["Z","zē","«з»","zivs","зивс","рыба"],["Ž","žē","«ж»","žurnāls","журнаалс","журнал"]];
+const ABC_N=6; // новых букв за урок
+const abcUrls=(i,word)=>word?["audio/ABCW_"+i+".wav"]:["audio/ABCA_"+i+".wav","audio/ABCW_"+i+".wav"];
+async function playUrls(urls){for(const u of urls){const x=new Audio(u);await x.play();await new Promise(r=>{x.onended=r;setTimeout(r,4000)})}}
+function abcPlayBtn(i,box,auto,onlyName){
+  const b=document.createElement("button");b.type="button";b.className="big b-dark";b.textContent=onlyName?"▶ Послушать ещё раз":"🔊 Буква и слово (нейроголос)";
+  const urls=onlyName?["audio/ABCA_"+i+".wav"]:abcUrls(i);
+  b.onclick=()=>playUrls(urls).catch(()=>toast("Не удалось включить звук. Проверьте громкость"));box.appendChild(b);
+  if(auto)setTimeout(()=>playUrls(urls).catch(()=>{}),250);
+}
+// Похожие буквы (a/ā, c/č …) — в вариантах ответа вместе: так учится разница
+const abcBase=c=>c.normalize("NFD").replace(/[̀-ͯ]/g,"");
+function abcOpts(i,pool,f){
+  const near=pool.filter(j=>j!==i&&abcBase(ABC[j][0])===abcBase(ABC[i][0]));
+  const rest=shuffle(pool.filter(j=>j!==i&&!near.includes(j))).concat(shuffle(ABC.map((_,j)=>j).filter(j=>j!==i&&!pool.includes(j))));
+  return shuffle([i,...near,...rest].slice(0,4)).map(j=>f(ABC[j],j));
+}
+function startAbc(reviewOnly){
+  const n=Math.min(S.abc,ABC.length),all=ABC.map((_,j)=>j);
+  let batch,qs=[];
+  if(!reviewOnly&&n<ABC.length){batch=all.slice(n,n+ABC_N);qs=batch.map(i=>({type:"abcLearn",i,a:ABC[i]}))}
+  else batch=pick(all.slice(0,Math.max(n,ABC_N)),10);
+  const pool=all.slice(0,Math.max(n+(reviewOnly?0:batch.length),ABC_N));
+  const L=(a)=>a[0]+" "+a[0].toLowerCase();
+  const mk=(type,i)=>{const a=ABC[i];
+    if(type==="abcHear")return {type,i,a,opts:abcOpts(i,pool,L),right:L(a)};
+    if(type==="abcRu")return {type,i,a,opts:abcOpts(i,pool,x=>x[2]),right:a[2]};
+    return {type,i,a,opts:abcOpts(i,pool,x=>"["+x[4]+"]"),right:"["+a[4]+"]"}};
+  ["abcRu","abcHear","abcWord"].forEach(t=>shuffle(batch).forEach(i=>qs.push(mk(t,i))));
+  G={mode:"abc",batch:reviewOnly||n>=ABC.length?null:batch,qs,k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0};
+  show("lesson");renderQ();
+}
+function showAbc(){
+  showInfo("🔤 Алфавит · "+S.abc+" из "+ABC.length,b=>{
+    b.append(el("p","В латышском 33 буквы. Читается почти всё как пишется. Черта сверху (ā) — звук вдвое длиннее, запятая снизу (ķ, ļ, ņ, ģ) — мягкий звук. Нажмите на букву, чтобы послушать.","small"));
+    const det=el("div",null,"abcd");det.hidden=true;
+    const grid=el("div",null,"abc");
+    ABC.forEach((a,i)=>{const t=el("button",null,i<S.abc?"on":"");t.type="button";t.append(a[0]+a[0].toLowerCase(),el("small",a[1]));
+      t.onclick=()=>{det.hidden=false;det.textContent="";det.append(el("b",a[0]+" "+a[0].toLowerCase()),el("div","Называется «"+a[1]+"», звук: "+a[2]),el("div","Пример: "+a[3]+" ["+a[4]+"] — "+a[5]));
+        playUrls(abcUrls(i)).catch(()=>toast("Не удалось включить звук"))};grid.appendChild(t)});
+    const go=el("button",S.abc<ABC.length?"Учить буквы: "+ABC.slice(S.abc,S.abc+ABC_N).map(a=>a[0]).join(" "):"🎲 Проверить весь алфавит","big b-amber");go.type="button";go.onclick=()=>startAbc();
+    b.append(go,det,grid);
+    if(S.abc>=ABC_N&&S.abc<ABC.length){const rv=el("button","🔁 Повторить выученные буквы","big b-dark");rv.type="button";rv.onclick=()=>startAbc(true);b.appendChild(rv)}
+  });
+}
+$("abcBtn").onclick=showAbc;
+
+/* ============ АУДИРОВАНИЕ: слово звучит, текст не показан — выбрать перевод ============ */
+function hearBtn(word,box){
+  const b=document.createElement("button");b.type="button";b.className="big b-dark";b.textContent="⏳ Загружаю запись…";b.disabled=true;
+  nativeAudio(word).then(a=>{
+    if(!a){if(lvVoice){b.disabled=false;b.textContent="▶ Послушать ещё раз";b.onclick=()=>speak(word);speak(word)}
+      else b.textContent="🔇 Записи нет. Слово: "+word;return}
+    b.disabled=false;b.textContent="▶ Послушать ещё раз"+(a.native?" (носитель)":"");
+    b.onclick=()=>playUrls(a.urls).catch(()=>toast("Не удалось включить звук. Проверьте громкость"));
+    playUrls(a.urls).catch(()=>{})});
+  box.appendChild(b);
+}
+function startListen(){
+  let pool=learnedWords();
+  if(pool.length<4){const L=LEVELS[nextLevel()]||LEVELS[0];pool=L.w.slice(0,Math.max(8,(S.learned[nextLevel()]||0)+4));
+    toast("Слушаем слова темы «"+L.n+"»")}
+  const qs=pick(pool,Math.min(8,pool.length)).map(w=>({type:"hear",w,opts:shuffle([w,...pick(pool.filter(x=>x!==w),3)])}));
+  qs.forEach(q=>nativeAudio(q.w[0]));
+  G={mode:"listen",qs,k:0,hearts:99,right:0,wrong:0,combo:0,best:0,xp:0};show("lesson");renderQ();
+}
+
+/* ============ РАЗГОВОР: шаг 1 — произношение в приложении, шаг 2 — беседа с учителем ============ */
+function talkPrompt(){
+  const L=LEVELS[nextLevel()]||LEVELS[0],known=learnedWords().map(w=>w[0]).slice(-40).join(", ")||"пока только алфавит и приветствия";
+  return "Давай поговорим голосом по-латышски (я начинающий, неделя "+weekNo()+" из 12). Тема: «"+L.n+"». Я знаю слова: "+known+
+    ".\nЗадавай мне простые вопросы по одному, жди ответа, исправляй ошибки по-русски коротко. 10–15 минут.";
+}
+function showTalk(){
+  showInfo("🗣 Разговор",b=>{
+    b.append(el("h3","Шаг 1. Разогрев: скажите 6 слов вслух"),el("p","Телефон послушает и скажет, понятно ли.","small"));
+    const s=el("button","🎤 Начать произношение","big b-amber");s.type="button";s.onclick=()=>{startSay();G.from="say1"};b.appendChild(s);
+    b.append(el("h3","Шаг 2. Беседа с учителем"),el("p","Нажмите кнопку — задание скопируется. В чате учителя вставьте его и включите голосовой режим 〰️.","small"));
+    const ta=el("textarea");ta.value=talkPrompt();ta.readOnly=true;b.appendChild(ta);
+    const op=el("a","📋 Скопировать и открыть учителя","big b-amber");op.href=TEACHER_URL;op.target="_blank";op.rel="noopener";
+    op.onclick=()=>{try{navigator.clipboard.writeText(ta.value)}catch(e){}markDone("talk")};b.appendChild(op);
+  });
 }
 
 // Экран-справка
@@ -861,7 +987,7 @@ function report(){
   const checks=Object.entries(S.checks||{}).map(([k,v])=>"нед."+k+": "+v+"%").join(", ")||"ещё не было";
   const weak=Object.entries(S.srs).filter(([k,v])=>v.b<=1).map(([k])=>k).slice(0,15).join(", ")||"нет";
   const t="Отчёт Dzintars ("+today.split("-").reverse().join(".")+")\nНеделя программы: "+w+" из 12\nВыучено слов: "+lw+"\nК повторению сегодня: "+due+"\nПроверки недель: "+checks+
-    "\nДней подряд: "+S.streak+"\nСегодня сделано: "+BLOCKS.filter(b=>st.done[b.id]).map(b=>b.t).join(", ")+"\nТрудные слова: "+weak+
+    "\nДней подряд: "+S.streak+"\nАлфавит: "+S.abc+" из 33 букв\nСегодня сделано: "+planBlocks().filter(b=>st.done[b.id]).map(b=>b.t).join(", ")+"\nТрудные слова: "+weak+
     "\nОшибки: "+(S.errors.map(e=>e[0]).slice(0,15).join(", ")||"нет")+"\n\nПо этому отчёту скажи, успеваю ли я к A2, и дай план на завтра.";
   copyText(t,"Отчёт скопирован — вставьте в чат учителя");
 }
@@ -946,7 +1072,16 @@ function finish(lost){
   else if(G.mode==="check"){S.checks[G.week]=Math.max(S.checks[G.week]||0,acc);stars=acc>=90?3:acc>=70?2:1;
     title="Проверка недели "+G.week+": "+acc+"%";
     sub=acc>=70?"Вы идёте по плану к A2. Нажмите «Отчёт учителю» и отправьте результат.":"Ниже 70% — включаем страховку: 3 дня без новых слов, только «Повторить сегодня» и «Ошибки», потом проверку ещё раз."}
+  else if(G.mode==="abc"){stars=acc>=90?3:acc>=70?2:1;
+    if(G.batch){S.abc=Math.max(S.abc,G.batch[G.batch.length-1]+1);
+      title="Новые буквы: "+G.batch.map(i=>ABC[i][0]).join(" ");
+      sub=S.abc>=ABC.length?"Весь алфавит выучен! Теперь читать можно любое слово.":"Выучено "+S.abc+" из "+ABC.length+" букв. Следующие: "+ABC.slice(S.abc,S.abc+ABC_N).map(a=>a[0]).join(" ")+"."}
+    else{title="Алфавит: "+acc+"% верно";sub="Нажмите «🔤 Алфавит», чтобы послушать любую букву."}}
+  else if(G.mode==="listen"){const n=G.qs.filter(q=>!q.again).length;stars=acc>=90?3:acc>=70?2:1;
+    title="На слух: "+(n-(G.miss||0))+" из "+n;
+    sub="Ещё полезно: 10 минут латышского радио (LR1) или урок на e-Laipa — просто слушать, не переводя."}
   else{title="Ошибки исправлены";sub="Осталось на исправление: "+S.errors.length;stars=acc>=80?3:acc>=50?2:1}
+  if(G.from&&!lost&&G.from!=="say1")markDone(G.from);
   if(G.best>=10)award("combo10");
   // серия дней
   if(G.xp>0){if(S.last!==today){S.streak=S.last===yesterday?S.streak+1:1;S.last=today}}
@@ -959,7 +1094,7 @@ function finish(lost){
   const rb=$("rBadges");rb.textContent="";G.badges.forEach(b=>{const d=document.createElement("div");d.className="badge";d.textContent=b;rb.appendChild(d)});
   show("result");if(!lost&&stars>0){sfx.win();burst(stars*40)}else sfx.no();
 }
-$("rNext").onclick=()=>{show("home");renderHome()};
+$("rNext").onclick=()=>{if(G&&G.from==="say1"){showTalk();return}show("home");renderHome()};
 $("blitzBtn").onclick=startBlitz;$("fixBtn").onclick=startFix;
 
 renderHome();loadContent();
