@@ -1,6 +1,6 @@
-// Хранит приложение на телефоне: без интернета берёт из памяти,
+﻿// Хранит приложение на телефоне: без интернета берёт из памяти,
 // с интернетом сначала проверяет новую версию.
-const CACHE = "dzintars-v6";
+const CACHE = "dzintars-v7";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png",
   "content/part1.json", "content/part2.json", "content/grammar.json", "audio/index.json"];
 // озвучка алфавита: 33 буквы + 33 слова-примера
